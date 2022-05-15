@@ -1,4 +1,4 @@
-package retreiver
+package retriever
 
 import (
 	"bufio"

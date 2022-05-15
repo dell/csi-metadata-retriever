@@ -6,8 +6,6 @@ import (
 
 	"github.com/dell/gocsi"
 	log "github.com/sirupsen/logrus"
-
-	"/root/francis/grpc/newcsi/service"
 )
 
 // New returns a new CSI Storage Plug-in Provider.
@@ -26,7 +24,7 @@ func New() RetrieverPluginProvider {
 			sp *RetrieverPlugin,
 			lis net.Listener) error {
 
-			log.WithField("service", service.Name).Debug("BeforeServe")
+			log.WithField("service", "MetadataRetriever").Debug("BeforeServe")
 			return nil
 		},
 

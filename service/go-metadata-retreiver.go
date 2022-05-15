@@ -1,5 +1,3 @@
-//go:generate make
-
 package retreiver
 
 import (

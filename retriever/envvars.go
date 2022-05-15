@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/dell/gocsi"
 	csictx "github.com/dell/gocsi/context"
 )
 
@@ -145,11 +146,11 @@ func (sp *RetrieverPlugin) initEnvVars(ctx context.Context) {
 	}
 
 	// Check for the debug value.
-	if v, ok := csictx.LookupEnv(ctx, EnvVarDebug); ok {
+	if v, ok := csictx.LookupEnv(ctx, gocsi.EnvVarDebug); ok {
 		/* #nosec G104 */
 		if ok, _ := strconv.ParseBool(v); ok {
-			csictx.Setenv(ctx, EnvVarReqLogging, "true")
-			csictx.Setenv(ctx, EnvVarRepLogging, "true")
+			csictx.Setenv(ctx, gocsi.EnvVarReqLogging, "true")
+			csictx.Setenv(ctx, gocsi.EnvVarRepLogging, "true")
 		}
 	}
 

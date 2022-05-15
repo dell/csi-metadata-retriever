@@ -21,14 +21,20 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
+	"github.com/dell/gocsi"
 	csictx "github.com/dell/gocsi/context"
 	"github.com/dell/gocsi/utils"
 )
 
+// RetrieverServer is the server API for Retriever service.
+type RetrieverServer interface {
+	GetPVCLabels(context.Context, *GetPVCLabelsRequest) (*GetPVCLabelsResponse, error)
+}
+
 type GetPVCLabelsRequest struct {
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 }
-type CreateVolumeResponse struct {
+type GetPVCLabelsResponse struct {
 	Parameters map[string]string `protobuf:"bytes,4,rep,name=parameters,proto3" json:"parameters,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -39,18 +45,18 @@ func Run(
 	sp RetrieverPluginProvider) {
 
 	// Check for the debug value.
-	if v, ok := csictx.LookupEnv(ctx, EnvVarDebug); ok {
+	if v, ok := csictx.LookupEnv(ctx, gocsi.EnvVarDebug); ok {
 		/* #nosec G104 */
 		if ok, _ := strconv.ParseBool(v); ok {
-			csictx.Setenv(ctx, EnvVarLogLevel, "debug")
-			csictx.Setenv(ctx, EnvVarReqLogging, "true")
-			csictx.Setenv(ctx, EnvVarRepLogging, "true")
+			csictx.Setenv(ctx, gocsi.EnvVarLogLevel, "debug")
+			csictx.Setenv(ctx, gocsi.EnvVarReqLogging, "true")
+			csictx.Setenv(ctx, gocsi.EnvVarRepLogging, "true")
 		}
 	}
 
 	// Adjust the log level.
 	lvl := log.InfoLevel
-	if v, ok := csictx.LookupEnv(ctx, EnvVarLogLevel); ok {
+	if v, ok := csictx.LookupEnv(ctx, gocsi.EnvVarLogLevel); ok {
 		var err error
 		if lvl, err = log.ParseLevel(v); err != nil {
 			lvl = log.InfoLevel
@@ -165,8 +171,8 @@ type RetrieverPluginProvider interface {
 // RetrieverPlugin is the collection of services and data used to server
 // a new gRPC endpoint that acts as a CSI storage plug-in (SP).
 type RetrieverPlugin struct {
-	// Retriever is the eponymous CSI service.
-	Retriever csi.RetrieverServer
+	// MetadataRetriever is the eponymous CSI service.
+	MetadataRetriever RetrieverServer
 
 	// ServerOpts is a list of gRPC server options used when serving
 	// the SP. This list should not include a gRPC interceptor option
@@ -185,7 +191,7 @@ type RetrieverPlugin struct {
 	// of the gRPC server. This callback may be used to perform custom
 	// initialization logic, modify the interceptors and server options,
 	// or prevent the server from starting by returning a non-nil error.
-	BeforeServe func(context.Context, *StoragePlugin, net.Listener) error
+	BeforeServe func(context.Context, *RetrieverPlugin, net.Listener) error
 
 	// EnvVars is a list of default environment variables and values.
 	EnvVars []string
@@ -260,10 +266,8 @@ func (sp *RetrieverPlugin) Serve(ctx context.Context, lis net.Listener) error {
 		// Initialize the gRPC server.
 		sp.server = grpc.NewServer(sp.ServerOpts...)
 
-		// Register the CSI services.
-		// Always require the identity service.
 		if sp.MetadataRetriever == nil {
-			err = errors.New("identity service is required")
+			err = errors.New("retriever service is required")
 			return
 		}
 
@@ -319,7 +323,7 @@ func (sp *RetrieverPlugin) initEndpointPerms(
 		return nil
 	}
 
-	v, ok := csictx.LookupEnv(ctx, EnvVarEndpointPerms)
+	v, ok := csictx.LookupEnv(ctx, gocsi.EnvVarEndpointPerms)
 	if !ok || v == "0755" {
 		return nil
 	}
@@ -360,7 +364,7 @@ func (sp *RetrieverPlugin) initEndpointOwner(
 		pgid = gid
 	)
 
-	if v, ok := csictx.LookupEnv(ctx, EnvVarEndpointUser); ok {
+	if v, ok := csictx.LookupEnv(ctx, gocsi.EnvVarEndpointUser); ok {
 		m, err := regexp.MatchString(`^\d+$`, v)
 		if err != nil {
 			return err
@@ -387,7 +391,7 @@ func (sp *RetrieverPlugin) initEndpointOwner(
 		uid = iuid
 	}
 
-	if v, ok := csictx.LookupEnv(ctx, EnvVarEndpointGroup); ok {
+	if v, ok := csictx.LookupEnv(ctx, gocsi.EnvVarEndpointGroup); ok {
 		m, err := regexp.MatchString(`^\d+$`, v)
 		if err != nil {
 			return err

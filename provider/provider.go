@@ -4,12 +4,13 @@ import (
 	"context"
 	"net"
 
+	"github.com/dell/csi-metadata-retriever/service"
 	"github.com/dell/gocsi"
 	log "github.com/sirupsen/logrus"
 )
 
 // New returns a new CSI Storage Plug-in Provider.
-func New() RetrieverPluginProvider {
+func New() retriever.RetrieverPluginProvider {
 	svc := service.New()
 	return &RetrieverPlugin{
 		MetadataRetriever: svc,
@@ -21,7 +22,7 @@ func New() RetrieverPluginProvider {
 		// server from starting by returning a non-nil error.
 		BeforeServe: func(
 			ctx context.Context,
-			sp *RetrieverPlugin,
+			sp *retriever.RetrieverPlugin,
 			lis net.Listener) error {
 
 			log.WithField("service", "MetadataRetriever").Debug("BeforeServe")

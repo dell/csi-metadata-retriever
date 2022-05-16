@@ -9,9 +9,9 @@ SYNOPSIS
 STORAGE OPTIONS
 {{.Usage}}{{end}}
 GLOBAL OPTIONS
-    CSI_ENDPOINT
+    CSI_RETRIEVER_ENDPOINT
         The CSI endpoint may also be specified by the environment variable
-        CSI_ENDPOINT. The endpoint should adhere to Go's network address
+        CSI_RETRIEVER_ENDPOINT. The endpoint should adhere to Go's network address
         pattern:
 
             * tcp://host:port
@@ -20,16 +20,6 @@ GLOBAL OPTIONS
         If the network type is omitted then the value is assumed to be an
         absolute or relative filesystem path to a UNIX socket file
 
-    X_CSI_MODE
-        Specifies the service mode of the storage plug-in. Valid values are:
-
-            * <empty>
-            * controller
-            * node
-
-        If unset or set to an empty value the storage plug-in activates
-        both controller and node services. The identity service is always
-        activated.
 
     X_CSI_ENDPOINT_PERMS
         When CSI_ENDPOINT is set to a UNIX socket file this environment

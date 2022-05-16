@@ -9,7 +9,7 @@ import (
 
 // main is ignored when this package is built as a go plug-in.
 func main() {
-	retreiver.Run(
+	retriever.Run(
 		context.Background(),
 		"MetadataRetriever",
 		"A description of the SP",

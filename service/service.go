@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/dell/csi-metadata-retriever/retriever"
 )
 
 const (
@@ -14,9 +14,7 @@ const (
 
 // Service is a CSI SP and idempotency.Provider.
 type Service interface {
-	csi.ControllerServer
-	csi.IdentityServer
-	csi.NodeServer
+	retriever.RetrieverServer
 }
 
 type service struct{}

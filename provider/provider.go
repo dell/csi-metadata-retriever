@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 
+	"github.com/dell/csi-metadata-retriever/retriever"
 	"github.com/dell/csi-metadata-retriever/service"
 	"github.com/dell/gocsi"
 	log "github.com/sirupsen/logrus"
@@ -12,7 +13,7 @@ import (
 // New returns a new CSI Storage Plug-in Provider.
 func New() retriever.RetrieverPluginProvider {
 	svc := service.New()
-	return &RetrieverPlugin{
+	return &retriever.RetrieverPlugin{
 		MetadataRetriever: svc,
 
 		// BeforeServe allows the SP to participate in the startup

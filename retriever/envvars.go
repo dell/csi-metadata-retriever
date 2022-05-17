@@ -113,7 +113,7 @@ const (
 
 )
 
-func (sp *RetrieverPlugin) initEnvVars(ctx context.Context) {
+func (sp *Plugin) initEnvVars(ctx context.Context) {
 
 	// Copy the environment variables from the public EnvVar
 	// string slice to the private envVars map for quick lookup.

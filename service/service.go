@@ -14,7 +14,7 @@ const (
 
 // Service is a CSI SP and idempotency.Provider.
 type Service interface {
-	retriever.RetrieverServer
+	retriever.Server
 }
 
 type service struct{}

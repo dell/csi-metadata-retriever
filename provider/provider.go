@@ -11,9 +11,9 @@ import (
 )
 
 // New returns a new CSI Storage Plug-in Provider.
-func New() retriever.RetrieverPluginProvider {
+func New() retriever.PluginProvider {
 	svc := service.New()
-	return &retriever.RetrieverPlugin{
+	return &retriever.Plugin{
 		MetadataRetriever: svc,
 
 		// BeforeServe allows the SP to participate in the startup
@@ -23,7 +23,7 @@ func New() retriever.RetrieverPluginProvider {
 		// server from starting by returning a non-nil error.
 		BeforeServe: func(
 			ctx context.Context,
-			sp *retriever.RetrieverPlugin,
+			sp *retriever.Plugin,
 			lis net.Listener) error {
 
 			log.WithField("service", "MetadataRetriever").Debug("BeforeServe")

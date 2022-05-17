@@ -26,15 +26,18 @@ import (
 	"github.com/dell/gocsi/utils"
 )
 
-// RetrieverServer is the server API for Retriever service.
-type RetrieverServer interface {
+// Server is the server API for Retriever service.
+type Server interface {
 	GetPVCLabels(context.Context, *GetPVCLabelsRequest) (*GetPVCLabelsResponse, error)
 }
 
+// GetPVCLabelsRequest defines API request type
 type GetPVCLabelsRequest struct {
 	Name      string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	NameSpace string `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
 }
+
+// GetPVCLabelsResponse defines API response type
 type GetPVCLabelsResponse struct {
 	Parameters map[string]string `protobuf:"bytes,4,rep,name=parameters,proto3" json:"parameters,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
@@ -43,7 +46,7 @@ type GetPVCLabelsResponse struct {
 func Run(
 	ctx context.Context,
 	appName, appDescription, appUsage string,
-	sp RetrieverPluginProvider) {
+	sp PluginProvider) {
 
 	// Check for the debug value.
 	if v, ok := csictx.LookupEnv(ctx, gocsi.EnvVarDebug); ok {
@@ -144,9 +147,9 @@ func Run(
 	}
 }
 
-// RetrieverPluginProvider is able to serve a gRPC endpoint that provides
+// PluginProvider is able to serve a gRPC endpoint that provides
 // the CSI services: Retriever
-type RetrieverPluginProvider interface {
+type PluginProvider interface {
 
 	// Serve accepts incoming connections on the listener lis, creating
 	// a new ServerTransport and service goroutine for each. The service
@@ -169,11 +172,11 @@ type RetrieverPluginProvider interface {
 	GracefulStop(ctx context.Context)
 }
 
-// RetrieverPlugin is the collection of services and data used to server
+// Plugin is the collection of services and data used to server
 // a new gRPC endpoint that acts as a CSI storage plug-in (SP).
-type RetrieverPlugin struct {
+type Plugin struct {
 	// MetadataRetriever is the eponymous CSI service.
-	MetadataRetriever RetrieverServer
+	MetadataRetriever Server
 
 	// ServerOpts is a list of gRPC server options used when serving
 	// the SP. This list should not include a gRPC interceptor option
@@ -192,7 +195,7 @@ type RetrieverPlugin struct {
 	// of the gRPC server. This callback may be used to perform custom
 	// initialization logic, modify the interceptors and server options,
 	// or prevent the server from starting by returning a non-nil error.
-	BeforeServe func(context.Context, *RetrieverPlugin, net.Listener) error
+	BeforeServe func(context.Context, *Plugin, net.Listener) error
 
 	// EnvVars is a list of default environment variables and values.
 	EnvVars []string
@@ -216,7 +219,7 @@ type RetrieverPlugin struct {
 // to reply to them. Serve returns when lis.Accept fails with fatal
 // errors.  lis will be closed when this method returns.
 // Serve always returns non-nil error.
-func (sp *RetrieverPlugin) Serve(ctx context.Context, lis net.Listener) error {
+func (sp *Plugin) Serve(ctx context.Context, lis net.Listener) error {
 	var err error
 	sp.serveOnce.Do(func() {
 		// Please note that the order of the below init functions is
@@ -282,7 +285,7 @@ func (sp *RetrieverPlugin) Serve(ctx context.Context, lis net.Listener) error {
 // It cancels all active RPCs on the server side and the corresponding
 // pending RPCs on the client side will get notified by connection
 // errors.
-func (sp *RetrieverPlugin) Stop(ctx context.Context) {
+func (sp *Plugin) Stop(ctx context.Context) {
 	sp.stopOnce.Do(func() {
 		if sp.server != nil {
 			sp.server.Stop()
@@ -294,7 +297,7 @@ func (sp *RetrieverPlugin) Stop(ctx context.Context) {
 // GracefulStop stops the gRPC server gracefully. It stops the server
 // from accepting new connections and RPCs and blocks until all the
 // pending RPCs are finished.
-func (sp *RetrieverPlugin) GracefulStop(ctx context.Context) {
+func (sp *Plugin) GracefulStop(ctx context.Context) {
 	sp.stopOnce.Do(func() {
 		if sp.server != nil {
 			sp.server.GracefulStop()
@@ -305,7 +308,7 @@ func (sp *RetrieverPlugin) GracefulStop(ctx context.Context) {
 
 const netUnix = "unix"
 
-func (sp *RetrieverPlugin) initEndpointPerms(
+func (sp *Plugin) initEndpointPerms(
 	ctx context.Context, lis net.Listener) error {
 
 	if lis.Addr().Network() != netUnix {
@@ -336,7 +339,7 @@ func (sp *RetrieverPlugin) initEndpointPerms(
 	return nil
 }
 
-func (sp *RetrieverPlugin) initEndpointOwner(
+func (sp *Plugin) initEndpointOwner(
 	ctx context.Context, lis net.Listener) error {
 
 	if lis.Addr().Network() != netUnix {
@@ -422,17 +425,17 @@ func (sp *RetrieverPlugin) initEndpointOwner(
 	return nil
 }
 
-func (sp *RetrieverPlugin) lookupEnv(key string) (string, bool) {
+func (sp *Plugin) lookupEnv(key string) (string, bool) {
 	val, ok := sp.envVars[key]
 	return val, ok
 }
 
-func (sp *RetrieverPlugin) setenv(key, val string) error {
+func (sp *Plugin) setenv(key, val string) error {
 	sp.envVars[key] = val
 	return nil
 }
 
-func (sp *RetrieverPlugin) getEnvBool(ctx context.Context, key string) bool {
+func (sp *Plugin) getEnvBool(ctx context.Context, key string) bool {
 	v, ok := csictx.LookupEnv(ctx, key)
 	if !ok {
 		return false

@@ -7,6 +7,8 @@ import (
 	"github.com/dell/csi-metadata-retriever/retriever"
 	"golang.org/x/net/context"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -34,12 +36,21 @@ func (s *service) GetPVCLabels(
 		panic(err.Error())
 	}
 
-	_ = clientset.CoreV1().PersistentVolumes()
-	//match result with req.Name
+	pvcClient := clientset.CoreV1().PersistentVolumeClaims(req.NameSpace)
+	if pvcClient == nil {
+		panic(errors.New("PVC client is nil"))
+	}
+
+	pvc, err := pvcClient.Get(ctx, req.Name, metav1.GetOptions{})
 	if err != nil {
 		panic(err.Error())
 	}
 
 	resp := &retriever.GetPVCLabelsResponse{}
+
+	for k, v := range pvc.Labels {
+		resp.Parameters[k] = v
+	}
+
 	return resp, err
 }

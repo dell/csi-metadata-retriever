@@ -14,7 +14,7 @@ import (
 func New() retriever.PluginProvider {
 	svc := service.New()
 	return &retriever.Plugin{
-		MetadataRetriever: svc,
+		MetadataRetrieverService: svc,
 
 		// BeforeServe allows the SP to participate in the startup
 		// sequence. This function is invoked directly before the

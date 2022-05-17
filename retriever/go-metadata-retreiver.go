@@ -21,26 +21,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
+	"github.com/dell/csi-metadata-retriever/service"
 	"github.com/dell/gocsi"
 	csictx "github.com/dell/gocsi/context"
 	"github.com/dell/gocsi/utils"
 )
-
-// Server is the server API for Retriever service.
-type Server interface {
-	GetPVCLabels(context.Context, *GetPVCLabelsRequest) (*GetPVCLabelsResponse, error)
-}
-
-// GetPVCLabelsRequest defines API request type
-type GetPVCLabelsRequest struct {
-	Name      string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	NameSpace string `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
-}
-
-// GetPVCLabelsResponse defines API response type
-type GetPVCLabelsResponse struct {
-	Parameters map[string]string `protobuf:"bytes,4,rep,name=parameters,proto3" json:"parameters,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-}
 
 // Run launches a CSI storage plug-in.
 func Run(
@@ -176,7 +161,7 @@ type PluginProvider interface {
 // a new gRPC endpoint that acts as a CSI storage plug-in (SP).
 type Plugin struct {
 	// MetadataRetriever is the eponymous CSI service.
-	MetadataRetriever Server
+	MetadataRetrieverService service.Service
 
 	// ServerOpts is a list of gRPC server options used when serving
 	// the SP. This list should not include a gRPC interceptor option
@@ -258,7 +243,7 @@ func (sp *Plugin) Serve(ctx context.Context, lis net.Listener) error {
 		// Initialize the gRPC server.
 		sp.server = grpc.NewServer(sp.ServerOpts...)
 
-		if sp.MetadataRetriever == nil {
+		if sp.MetadataRetrieverService == nil {
 			err = errors.New("retriever service is required")
 			return
 		}

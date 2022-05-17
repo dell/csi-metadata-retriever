@@ -1,9 +1,5 @@
 package service
 
-import (
-	"github.com/dell/csi-metadata-retriever/retriever"
-)
-
 const (
 	// Name is the name of this CSI SP.
 	Name = "csi-metadata-retriever"
@@ -14,7 +10,7 @@ const (
 
 // Service is a CSI SP and idempotency.Provider.
 type Service interface {
-	retriever.Server
+	//	retriever.MetadataRetrieverClient
 }
 
 type service struct{}

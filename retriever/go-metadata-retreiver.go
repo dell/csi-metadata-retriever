@@ -244,24 +244,12 @@ func (sp *RetrieverPlugin) Serve(ctx context.Context, lis net.Listener) error {
 			return
 		}
 
-		// Initialize the storage plug-in's info.
-		//sp.initPluginInfo(ctx)
-
-		// Initialize the interceptors.
-		sp.initInterceptors(ctx)
-
 		// Invoke the SP's BeforeServe function to give the SP a chance
 		// to perform any local initialization routines.
 		if f := sp.BeforeServe; f != nil {
 			if err = f(ctx, sp, lis); err != nil {
 				return
 			}
-		}
-
-		// Add the interceptors to the server if any are configured.
-		if i := sp.Interceptors; len(i) > 0 {
-			sp.ServerOpts = append(sp.ServerOpts,
-				grpc.UnaryInterceptor(utils.ChainUnaryServer(i...)))
 		}
 
 		// Initialize the gRPC server.

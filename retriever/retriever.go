@@ -29,6 +29,7 @@ type GetPVCLabelsResponse struct {
 	Parameters map[string]string `protobuf:"bytes,4,rep,name=parameters,proto3" json:"parameters,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
+// MetadataRetrieverClientType holds client connection and timeout
 type MetadataRetrieverClientType struct {
 	conn *grpc.ClientConn
 	//log     logr.Logger
@@ -44,6 +45,7 @@ func NewMetadataRetrieverClient(conn *grpc.ClientConn, timeout time.Duration) *M
 	}
 }
 
+// GetPVCLabels gets the PVC labels and returns it
 func (s *MetadataRetrieverClientType) GetPVCLabels(
 	ctx context.Context,
 	req *GetPVCLabelsRequest) (

@@ -77,10 +77,14 @@ func (s *metadataRetrieverClient) GetPVCLabels(
 		panic(err.Error())
 	}
 
-	resp := &GetPVCLabelsResponse{}
+	parameters := make(map[string]string)
 
 	for k, v := range pvc.Labels {
-		resp.Parameters[k] = v
+		parameters[k] = v
+	}
+
+	resp := &GetPVCLabelsResponse{
+		Parameters: parameters,
 	}
 
 	return resp, err

@@ -1,0 +1,9 @@
+.vscode/
+.idea/
+*.out
+*.html
+bin/
+csi-vxflexos/
+goscaleio/
+dell-csi-extensions/
+workspace.code-workspace

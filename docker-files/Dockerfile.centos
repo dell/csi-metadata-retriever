@@ -1,0 +1,29 @@
+# Dockerfile to build CSI Metadata Retriever sidecar
+# based on CentOS
+ARG BASEIMAGE
+
+FROM $BASEIMAGE AS driver
+
+LABEL vendor="Dell Inc." \
+      name="csi-metadata-retriever" \
+      summary="CSI Metadata Retriever sidecar" \
+      description="CSI Metadata Retriever sidecar for metadata retrievel via kubeapi" \
+      version="1.0.0" \
+      license="Apache-2.0"
+
+COPY licenses /licenses
+
+# dependencies, following by cleaning the cache
+RUN echo "%_netsharedpath /sys:/proc" >> /etc/rpm/macros.dist && yum update -y && yum install -y e2fsprogs xfsprogs which \
+    && \
+    yum clean all \
+    && \
+    rm -rf /var/cache/run
+
+# validate some cli utilities are found
+RUN which mkfs.ext4
+RUN which mkfs.xfs
+RUN echo "export PATH=$PATH:/sbin:/bin" > /etc/profile.d/ubuntu_path.sh
+
+COPY "csi-metadata-retriever" .
+ENTRYPOINT ["/csi-metadata-retriever"]

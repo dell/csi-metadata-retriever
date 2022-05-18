@@ -13,7 +13,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-// Server is the server API for Retriever service.
+// MetadataRetrieverClient is the interface for retrieving metadata.
 type MetadataRetrieverClient interface {
 	GetPVCLabels(context.Context, *GetPVCLabelsRequest) (*GetPVCLabelsResponse, error)
 }
@@ -29,22 +29,22 @@ type GetPVCLabelsResponse struct {
 	Parameters map[string]string `protobuf:"bytes,4,rep,name=parameters,proto3" json:"parameters,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
-type metadataRetrieverClient struct {
+type MetadataRetrieverClientType struct {
 	conn *grpc.ClientConn
 	//log     logr.Logger
 	timeout time.Duration
 }
 
-//New csiclient
-func NewMetadataRetrieverClient(conn *grpc.ClientConn, timeout time.Duration) *metadataRetrieverClient {
-	return &metadataRetrieverClient{
+//NewMetadataRetrieverClient returns csiclient
+func NewMetadataRetrieverClient(conn *grpc.ClientConn, timeout time.Duration) *MetadataRetrieverClientType {
+	return &MetadataRetrieverClientType{
 		conn: conn,
 		//log:     log,
 		timeout: timeout,
 	}
 }
 
-func (s *metadataRetrieverClient) GetPVCLabels(
+func (s *MetadataRetrieverClientType) GetPVCLabels(
 	ctx context.Context,
 	req *GetPVCLabelsRequest) (
 	*GetPVCLabelsResponse, error) {

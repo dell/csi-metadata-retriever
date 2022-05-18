@@ -4,16 +4,18 @@ import (
 	"errors"
 	"net"
 	"os"
+
+	gocsiutils "github.com/dell/gocsi/utils"
 )
 
 // GetCSIEndpoint returns the network address specified by the
 // environment variable CSI_RETRIEVER_ENDPOINT.
 func GetCSIEndpoint() (network, addr string, err error) {
 	protoAddr := os.Getenv(EnvVarEndpoint)
-	if emptyRX.MatchString(protoAddr) {
+	if gocsiutils.emptyRX.MatchString(protoAddr) {
 		return "", "", errors.New("missing CSI_RETRIEVER_ENDPOINT")
 	}
-	return ParseProtoAddr(protoAddr)
+	return gocsiutils.ParseProtoAddr(protoAddr)
 }
 
 // GetCSIEndpointListener returns the net.Listener for the endpoint

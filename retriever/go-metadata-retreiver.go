@@ -13,6 +13,7 @@ import (
 	"os/user"
 	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"text/template"
@@ -497,4 +498,48 @@ func newLogger(f func(msg string, args ...interface{})) *logger {
 
 func (l *logger) Write(data []byte) (int, error) {
 	return l.w.Write(data)
+}
+
+func (sp *Plugin) initEnvVars(ctx context.Context) {
+
+	// Copy the environment variables from the public EnvVar
+	// string slice to the private envVars map for quick lookup.
+	sp.envVars = map[string]string{}
+	for _, v := range sp.EnvVars {
+		// Environment variables must adhere to one of the following
+		// formats:
+		//
+		//     - ENV_VAR_KEY=
+		//     - ENV_VAR_KEY=ENV_VAR_VAL
+		pair := strings.SplitN(v, "=", 2)
+		if len(pair) < 1 || len(pair) > 2 {
+			continue
+		}
+
+		// Ensure the environment variable is stored in all upper-case
+		// to make subsequent map-lookups deterministic.
+		key := strings.ToUpper(pair[0])
+
+		// Check to see if the value for the key is available from the
+		// context's os.Environ or os.LookupEnv functions. If neither
+		// return a value then use the provided default value.
+		var val string
+		if v, ok := csictx.LookupEnv(ctx, key); ok {
+			val = v
+		} else if len(pair) > 1 {
+			val = pair[1]
+		}
+		sp.envVars[key] = val
+	}
+
+	// Check for the debug value.
+	if v, ok := csictx.LookupEnv(ctx, gocsi.EnvVarDebug); ok {
+		/* #nosec G104 */
+		if ok, _ := strconv.ParseBool(v); ok {
+			csictx.Setenv(ctx, gocsi.EnvVarReqLogging, "true")
+			csictx.Setenv(ctx, gocsi.EnvVarRepLogging, "true")
+		}
+	}
+
+	return
 }

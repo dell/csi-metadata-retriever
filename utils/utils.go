@@ -4,14 +4,12 @@ import (
 	"errors"
 	"net"
 	"os"
-
-	"github.com/dell/csi-metadata-retriever/retriever"
 )
 
 // GetCSIEndpoint returns the network address specified by the
 // environment variable CSI_RETRIEVER_ENDPOINT.
 func GetCSIEndpoint() (network, addr string, err error) {
-	protoAddr := os.Getenv(retriever.EnvVarEndpoint)
+	protoAddr := os.Getenv(EnvVarEndpoint)
 	if emptyRX.MatchString(protoAddr) {
 		return "", "", errors.New("missing CSI_RETRIEVER_ENDPOINT")
 	}

@@ -89,7 +89,7 @@ func Run(
 	}
 
 	// If no endpoint is set then print the usage.
-	if os.Getenv(EnvVarEndpoint) == "" {
+	if os.Getenv(utils.EnvVarEndpoint) == "" {
 		printUsage()
 		os.Exit(1)
 	}

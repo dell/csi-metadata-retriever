@@ -22,9 +22,9 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/dell/csi-metadata-retriever/service"
+	"github.com/dell/csi-metadata-retriever/utils"
 	"github.com/dell/gocsi"
 	csictx "github.com/dell/gocsi/context"
-	"github.com/dell/gocsi/utils"
 )
 
 // Run launches a CSI storage plug-in.

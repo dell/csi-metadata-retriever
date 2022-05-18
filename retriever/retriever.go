@@ -13,7 +13,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-// Server is the server API for Retriever service.
+// MetadataRetrieverClient is the interface for retrieving metadata.
 type MetadataRetrieverClient interface {
 	GetPVCLabels(context.Context, *GetPVCLabelsRequest) (*GetPVCLabelsResponse, error)
 }
@@ -29,22 +29,24 @@ type GetPVCLabelsResponse struct {
 	Parameters map[string]string `protobuf:"bytes,4,rep,name=parameters,proto3" json:"parameters,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
-type metadataRetrieverClient struct {
+// MetadataRetrieverClientType holds client connection and timeout
+type MetadataRetrieverClientType struct {
 	conn *grpc.ClientConn
 	//log     logr.Logger
 	timeout time.Duration
 }
 
-//New csiclient
-func NewMetadataRetrieverClient(conn *grpc.ClientConn, timeout time.Duration) *metadataRetrieverClient {
-	return &metadataRetrieverClient{
+//NewMetadataRetrieverClient returns csiclient
+func NewMetadataRetrieverClient(conn *grpc.ClientConn, timeout time.Duration) *MetadataRetrieverClientType {
+	return &MetadataRetrieverClientType{
 		conn: conn,
 		//log:     log,
 		timeout: timeout,
 	}
 }
 
-func (s *metadataRetrieverClient) GetPVCLabels(
+// GetPVCLabels gets the PVC labels and returns it
+func (s *MetadataRetrieverClientType) GetPVCLabels(
 	ctx context.Context,
 	req *GetPVCLabelsRequest) (
 	*GetPVCLabelsResponse, error) {
@@ -77,10 +79,14 @@ func (s *metadataRetrieverClient) GetPVCLabels(
 		panic(err.Error())
 	}
 
-	resp := &GetPVCLabelsResponse{}
+	parameters := make(map[string]string)
 
 	for k, v := range pvc.Labels {
-		resp.Parameters[k] = v
+		parameters[k] = v
+	}
+
+	resp := &GetPVCLabelsResponse{
+		Parameters: parameters,
 	}
 
 	return resp, err

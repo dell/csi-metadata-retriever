@@ -19,11 +19,7 @@ RUN microdnf update -y \
     microdnf install -y  \
 	e2fsprogs \
 	xfsprogs \
-	nfs-utils \
-    nfs4-acl-tools \
-    acl \
 	which \
-	device-mapper-multipath \
 	&& \
 	microdnf clean all
 

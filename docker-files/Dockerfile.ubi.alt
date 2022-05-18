@@ -24,11 +24,7 @@ RUN yum -y update && \
 	yum -y install \
 	e2fsprogs.x86_64 \
 	xfsprogs.x86_64 \
-	nfs-utils.x86_64 \
-	nfs4-acl-tools \
-	acl \
-	which \
-	device-mapper-multipath \
+	which \	
 	&& \
 	yum clean all \
 	&& \

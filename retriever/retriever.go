@@ -2,7 +2,6 @@ package retriever
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"golang.org/x/net/context"
@@ -11,6 +10,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // MetadataRetrieverClient is the interface for retrieving metadata.
@@ -31,16 +32,14 @@ type GetPVCLabelsResponse struct {
 
 // MetadataRetrieverClientType holds client connection and timeout
 type MetadataRetrieverClientType struct {
-	conn *grpc.ClientConn
-	//log     logr.Logger
+	conn    *grpc.ClientConn
 	timeout time.Duration
 }
 
 //NewMetadataRetrieverClient returns csiclient
 func NewMetadataRetrieverClient(conn *grpc.ClientConn, timeout time.Duration) *MetadataRetrieverClientType {
 	return &MetadataRetrieverClientType{
-		conn: conn,
-		//log:     log,
+		conn:    conn,
 		timeout: timeout,
 	}
 }
@@ -51,8 +50,7 @@ func (s *MetadataRetrieverClientType) GetPVCLabels(
 	req *GetPVCLabelsRequest) (
 	*GetPVCLabelsResponse, error) {
 
-	fmt.Print("----- Inside Get PVC Labels RPC -----")
-
+	log.Infof("Get PVC labels for %s in namespace %s", req.Name, req.NameSpace)
 	if req.Name == "" {
 		return nil, errors.New(
 			"PVC Name cannot be empty")
@@ -61,22 +59,26 @@ func (s *MetadataRetrieverClientType) GetPVCLabels(
 	//TODO: config and clientset to be moved to BeforeServe()
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		panic(err.Error())
+		log.Error("Error getting cluster config: ", err)
+		return nil, err
 	}
 	// creates the clientset
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		panic(err.Error())
+		log.Error("Error creating clientset: ", err)
+		return nil, err
 	}
 
 	pvcClient := clientset.CoreV1().PersistentVolumeClaims(req.NameSpace)
 	if pvcClient == nil {
-		panic(errors.New("PVC client is nil"))
+		log.Error("Error getting PVC client: ", err)
+		return nil, err
 	}
 
 	pvc, err := pvcClient.Get(ctx, req.Name, metav1.GetOptions{})
 	if err != nil {
-		panic(err.Error())
+		log.Error("Error retrieving PVC info: ", err)
+		return nil, err
 	}
 
 	parameters := make(map[string]string)

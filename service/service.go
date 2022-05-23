@@ -5,7 +5,7 @@ const (
 	Name = "csi-metadata-retriever"
 
 	// VendorVersion is the version of this CSP SP.
-	VendorVersion = "0.0.0"
+	VendorVersion = "1.0.0"
 )
 
 // Service is a CSI SP and idempotency.Provider.

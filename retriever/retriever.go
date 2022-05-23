@@ -50,7 +50,7 @@ func (s *MetadataRetrieverClientType) GetPVCLabels(
 	req *GetPVCLabelsRequest) (
 	*GetPVCLabelsResponse, error) {
 
-	log.Info("Get PVC labes for %s in namespace %s", req.Name, req.NameSpace)
+	log.Infof("Get PVC labels for %s in namespace %s", req.Name, req.NameSpace)
 	if req.Name == "" {
 		return nil, errors.New(
 			"PVC Name cannot be empty")

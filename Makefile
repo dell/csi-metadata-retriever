@@ -62,3 +62,11 @@ check:	gosec
 	
 gosec:
 	gosec -quiet -log gosec.log -out=gosecresults.csv -fmt=csv ./...
+
+test:
+	rm -rf /tmp/csi_retriever_test.sock
+	go clean -cache; cd ./retriever; go test -race -cover -coverprofile=coverage.out -coverpkg ./... ./...
+	rm -rf /tmp/csi_retriever_test.sock
+
+coverage:
+	cd ./retriever; go tool cover -html=coverage.out -o coverage.html

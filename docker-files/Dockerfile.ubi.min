@@ -1,8 +1,8 @@
 # Dockerfile to build CSI Metadata Retriever sidecar
 # based on UBI-minimal image
 # Requires: RHEL host with subscription
-# UBI Image: ubi8/ubi-minimal:8.5-230.1645809059
-FROM registry.access.redhat.com/ubi8/ubi-minimal@sha256:21504085e8d740e62b52573fe9a1a0d58a3e7dba589cac69734ad2fa81d66635
+# UBI Image: ubi8/ubi-minimal:8.6-751
+FROM registry.access.redhat.com/ubi8/ubi-minimal@sha256:9a81cce19ae2a962269d4a7fecd38aec60b852118ad798a265c3f6c4be0df610
 
 LABEL vendor="Dell Inc." \
       name="csi-metadata-retriever" \
@@ -16,17 +16,7 @@ COPY licenses /licenses
 # dependencies, following by cleaning the cache
 RUN microdnf update -y \
     && \
-    microdnf install -y  \
-	e2fsprogs \
-	xfsprogs \
-	which \
-	&& \
 	microdnf clean all
-
-# validate some cli utilities are found
-RUN which mkfs.ext4
-RUN which mkfs.xfs
-RUN echo "export PATH=$PATH:/sbin:/bin" > /etc/profile.d/ubuntu_path.sh
 
 COPY "csi-metadata-retriever" .
 ENTRYPOINT ["/csi-metadata-retriever"]

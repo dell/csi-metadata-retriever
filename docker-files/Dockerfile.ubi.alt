@@ -1,7 +1,7 @@
 # Dockerfile to build CSI Metadata Retriever sidecar
 # based on UBI standard image.
 # Alternative way without RHEL host/subscription, using centos.repo
-FROM registry.access.redhat.com/ubi8/ubi:8.5-230
+FROM registry.access.redhat.com/ubi8/ubi:8.6-751
 
 LABEL vendor="Dell Inc." \
       name="csi-metadata-retriever" \
@@ -21,19 +21,9 @@ gpgcheck=0' > /etc/yum.repos.d/centos.repo
 
 # dependencies, following by cleaning the cache
 RUN yum -y update && \
-	yum -y install \
-	e2fsprogs.x86_64 \
-	xfsprogs.x86_64 \
-	which \	
-	&& \
 	yum clean all \
 	&& \
 	rm -rf /var/cache/run
-
-# validate some cli utilities are found
-RUN which mke2fs
-RUN which mkfs.xfs
-RUN echo "export PATH=$PATH:/sbin:/bin" > /etc/profile.d/ubuntu_path.sh
 
 COPY "csi-metadata-retriever" .
 ENTRYPOINT ["/csi-metadata-retriever"]

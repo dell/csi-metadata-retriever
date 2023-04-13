@@ -52,7 +52,7 @@ type MetadataRetrieverClientType struct {
 	timeout time.Duration
 }
 
-//NewMetadataRetrieverClient returns csiclient
+// NewMetadataRetrieverClient returns csiclient
 func NewMetadataRetrieverClient(conn *grpc.ClientConn, timeout time.Duration) *MetadataRetrieverClientType {
 	return &MetadataRetrieverClientType{
 		conn:    conn,

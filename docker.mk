@@ -1,6 +1,6 @@
 #
 #
-# Copyright © 2022 Dell Inc. or its subsidiaries. All Rights Reserved.
+# Copyright © 2022 - 2023 Dell Inc. or its subsidiaries. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ ifndef DOCKER_IMAGE_NAME
 endif
 
 ifndef BASEIMAGE
-	BASEIMAGE=ubi-minimal:8.7-1085
+	BASEIMAGE=registry.access.redhat.com/ubi8/ubi-micro:8.7-8
 endif
 
 # figure out if podman or docker should be used (use podman if found)

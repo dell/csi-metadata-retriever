@@ -27,11 +27,5 @@ LABEL vendor="Dell Inc." \
       license="Apache-2.0"
 
 COPY licenses /licenses
-
-# dependencies, following by cleaning the cache
-RUN microdnf update -y \
-    && \
-	microdnf clean all
-
 COPY "csi-metadata-retriever" .
 ENTRYPOINT ["/csi-metadata-retriever"]

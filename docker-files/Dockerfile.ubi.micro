@@ -17,7 +17,7 @@
 # based on UBI-micro image
 # Requires: RHEL host with subscription
 # UBI Image: ubi8/ubi-micro:8.7-8
-FROM registry.access.redhat.com/ubi8/ubi-micro:8.7-8
+FROM registry.access.redhat.com/ubi8/ubi-micro@sha256:ca61d14ebfdeaad344862694570a574adb2181f4339d3d2a2db93f20b6ccfe0e
 
 LABEL vendor="Dell Inc." \
       name="csi-metadata-retriever" \

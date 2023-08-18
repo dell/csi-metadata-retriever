@@ -16,8 +16,8 @@
 # Dockerfile to build CSI Metadata Retriever sidecar
 # based on UBI-micro image
 # Requires: RHEL host with subscription
-# UBI Image: ubi8/ubi-micro:8.8-1
-FROM registry.access.redhat.com/ubi8/ubi-micro@sha256:ca61d14ebfdeaad344862694570a574adb2181f4339d3d2a2db93f20b6ccfe0e
+# UBI Image: ubi9/ubi-micro:9.2-9
+FROM registry.access.redhat.com/ubi9/ubi-micro@sha256:18a01cb5c53560ca2295e8a218454fe33b330ad6fac0d0ea43a513cd93787b7f
 
 LABEL vendor="Dell Inc." \
       name="csi-metadata-retriever" \

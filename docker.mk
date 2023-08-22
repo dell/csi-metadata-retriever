@@ -33,7 +33,7 @@ ifndef DOCKER_IMAGE_NAME
 endif
 
 ifndef BASEIMAGE
-	BASEIMAGE=registry.access.redhat.com/ubi9/ubi-micro:9.2-9
+	BASEIMAGE=registry.access.redhat.com/ubi9/ubi-micro:9.2-13
 endif
 
 # figure out if podman or docker should be used (use podman if found)

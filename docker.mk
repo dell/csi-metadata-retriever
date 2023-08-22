@@ -48,7 +48,7 @@ ifndef MAJOR
 endif
 
 ifndef MINOR
-	MINOR=0
+	MINOR=5
 endif
 
 ifndef PATCH

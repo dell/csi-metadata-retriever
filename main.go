@@ -51,8 +51,8 @@ const netUnix = "unix"
 func Run(
 	ctx context.Context,
 	appName, appDescription, appUsage string,
-	sp retriever.PluginProvider) {
-
+	sp retriever.PluginProvider,
+) {
 	// Check for the debug value.
 	if v, ok := csictx.LookupEnv(ctx, gocsi.EnvVarDebug); ok {
 		/* #nosec G104 */

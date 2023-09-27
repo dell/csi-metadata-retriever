@@ -39,7 +39,6 @@ import (
 // PluginProvider is able to serve a gRPC endpoint that provides
 // the CSI services: Retriever
 type PluginProvider interface {
-
 	// Serve accepts incoming connections on the listener lis, creating
 	// a new ServerTransport and service goroutine for each. The service
 	// goroutine read gRPC requests and then call the registered handlers
@@ -197,8 +196,8 @@ func (sp *Plugin) GracefulStop(ctx context.Context) {
 const netUnix = "unix"
 
 func (sp *Plugin) initEndpointPerms(
-	ctx context.Context, lis net.Listener) error {
-
+	ctx context.Context, lis net.Listener,
+) error {
 	if lis.Addr().Network() != netUnix {
 		return nil
 	}
@@ -220,16 +219,17 @@ func (sp *Plugin) initEndpointPerms(
 		"mode": m,
 	}).Info("chmod csi endpoint")
 
-	if err := os.Chmod(p, m); err != nil {
-		return err
-	}
+	return os.Chmod(p, m)
+	// if err := os.Chmod(p, m); err != nil {
+	// 	return err
+	// }
 
-	return nil
+	// return nil
 }
 
 func (sp *Plugin) initEndpointOwner(
-	ctx context.Context, lis net.Listener) error {
-
+	ctx context.Context, lis net.Listener,
+) error {
 	if lis.Addr().Network() != netUnix {
 		return nil
 	}
@@ -324,7 +324,6 @@ func (sp *Plugin) setenv(key, val string) error {
 }
 
 func (sp *Plugin) initEnvVars(ctx context.Context) {
-
 	// Copy the environment variables from the public EnvVar
 	// string slice to the private envVars map for quick lookup.
 	sp.envVars = map[string]string{}

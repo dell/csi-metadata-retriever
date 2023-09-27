@@ -31,7 +31,7 @@ import (
 
 var grpcClient *grpc.ClientConn
 
-func TestServer_StartGracefulStop(t *testing.T) {
+func TestServer_StartGracefulStop(_ *testing.T) {
 	var stop func()
 	os.Setenv("CSI_RETRIEVER_ENDPOINT", "/tmp/csi_retriever_test.sock")
 
@@ -47,7 +47,7 @@ func TestServer_StartGracefulStop(t *testing.T) {
 	stop()
 }
 
-func TestServer_StartStop(t *testing.T) {
+func TestServer_StartStop(_ *testing.T) {
 	var stop func()
 	os.Setenv("CSI_RETRIEVER_ENDPOINT", "/tmp/csi_retriever_test.sock")
 

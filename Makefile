@@ -16,12 +16,6 @@
 
 NAME:=csi-metadata-retriever
 
-# Dockerfile defines which base image to use [Dockerfile.centos, Dockerfile.ubi, Dockerfile.ubi.min, Dockerfile.ubi.alt, Dockerfile.ubi.micro]
-# e.g.:$ make docker DOCKER_FILE=Dockerfile.ubi.alt
-ifndef DOCKER_FILE
-    DOCKER_FILE = Dockerfile.ubi.micro
-endif
-
 # Tag parameters
 ifndef MAJOR
     MAJOR=1
@@ -59,12 +53,12 @@ clean:
 # Generates the docker container (but does not push)
 docker:
 	go generate .
-	make -f docker.mk DOCKER_FILE=docker-files/$(DOCKER_FILE) docker
+	make -f docker.mk DOCKER_FILE=docker-files/Dockerfile docker
 
 # Same as `docker` but without cached layers and will pull latest version of base image
 docker-no-cache:
 	go generate .
-	make -f docker.mk DOCKER_FILE=docker-files/$(DOCKER_FILE) docker-no-cache
+	make -f docker.mk DOCKER_FILE=docker-files/Dockerfile docker-no-cache
 
 
 # Pushes container to the repository

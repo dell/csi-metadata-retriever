@@ -1,6 +1,6 @@
 #
 #
-# Copyright © 2022 - 2023 Dell Inc. or its subsidiaries. All Rights Reserved.
+# Copyright © 2023 Dell Inc. or its subsidiaries. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,27 +13,18 @@
 # limitations under the License.
 #
 #
-
 # Dockerfile to build CSI Metadata Retriever sidecar
-# based on standard UBI image
-# Requires: RHEL host with subscription
-FROM registry.access.redhat.com/ubi8/ubi:latest
+ARG BASEIMAGE
+
+FROM $BASEIMAGE
 
 LABEL vendor="Dell Inc." \
       name="csi-metadata-retriever" \
       summary="CSI Metadata Retriever sidecar" \
       description="CSI Metadata Retriever sidecar for metadata retrievel via kubeapi" \
-      version="1.4.0" \
+      version="1.5.0" \
       license="Apache-2.0"
 
 COPY licenses /licenses
-
-# dependencies, following by cleaning the cache
-RUN yum update -y \
-    && \
-    yum clean all \
-    && \
-    rm -rf /var/cache/run
-
 COPY "csi-metadata-retriever" .
 ENTRYPOINT ["/csi-metadata-retriever"]

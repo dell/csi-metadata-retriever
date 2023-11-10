@@ -32,10 +32,6 @@ ifndef DOCKER_IMAGE_NAME
     DOCKER_IMAGE_NAME=csi-metadata-retriever
 endif
 
-ifndef BASEIMAGE
-	BASEIMAGE=registry.access.redhat.com/ubi9/ubi-micro:9.2-13
-endif
-
 # figure out if podman or docker should be used (use podman if found)
 ifneq (, $(shell which podman 2>/dev/null))
 	BUILDER=podman
@@ -55,17 +51,22 @@ ifndef PATCH
 	PATCH=0
 endif
 
-docker:
+docker: download-csm-common
+	$(eval include csm-common.mk)
 	echo "MAJOR $(MAJOR) MINOR $(MINOR) PATCH $(PATCH) RELNOTE $(RELNOTE)"
 	echo "$(DOCKER_FILE)"
-	$(BUILDER) build -f $(DOCKER_FILE) -t "$(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):v$(MAJOR).$(MINOR).$(PATCH)$(RELNOTE)" --build-arg BASEIMAGE=$(BASEIMAGE) .
+	$(BUILDER) build -f $(DOCKER_FILE) -t "$(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):v$(MAJOR).$(MINOR).$(PATCH)$(RELNOTE)" --build-arg BASEIMAGE=$(DEFAULT_BASEIMAGE) .
 
-docker-no-cache:
+docker-no-cache: download-csm-common
+	$(eval include csm-common.mk)
 	echo "MAJOR $(MAJOR) MINOR $(MINOR) PATCH $(PATCH) RELNOTE $(RELNOTE)"
 	echo "$(DOCKER_FILE) --no-cache"
-	$(BUILDER) build --no-cache --pull -f $(DOCKER_FILE) -t "$(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):v$(MAJOR).$(MINOR).$(PATCH)$(RELNOTE)" --build-arg BASEIMAGE=$(BASEIMAGE) .
+	$(BUILDER) build --no-cache --pull -f $(DOCKER_FILE) -t "$(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):v$(MAJOR).$(MINOR).$(PATCH)$(RELNOTE)" --build-arg BASEIMAGE=$(DEFAULT_BASEIMAGE) .
 
 
 push:   
 	echo "MAJOR $(MAJOR) MINOR $(MINOR) PATCH $(PATCH) RELNOTE $(RELNOTE)"
 	$(BUILDER) push "$(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):v$(MAJOR).$(MINOR).$(PATCH)$(RELNOTE)"
+
+download-csm-common:
+	curl -O -L https://raw.githubusercontent.com/dell/csm/main/config/csm-common.mk

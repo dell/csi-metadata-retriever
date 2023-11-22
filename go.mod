@@ -3,8 +3,8 @@ module github.com/dell/csi-metadata-retriever
 go 1.21
 
 require (
-	github.com/dell/gocsi v1.6.0
-	github.com/sirupsen/logrus v1.6.0
+	github.com/dell/gocsi v1.8.1-0.20231107100034-82dd91ef61e9
+	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/net v0.17.0
 	google.golang.org/grpc v1.56.3
 	k8s.io/apimachinery v0.24.0
@@ -16,7 +16,7 @@ require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/akutz/gosync v0.1.0 // indirect
-	github.com/container-storage-interface/spec v1.5.0 // indirect
+	github.com/container-storage-interface/spec v1.6.0 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -31,7 +31,6 @@ require (
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect

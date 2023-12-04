@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/dell/gocsi v1.8.1-0.20231107100034-82dd91ef61e9
-	github.com/sirupsen/logrus v1.8.1
+	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/net v0.17.0
 	google.golang.org/grpc v1.56.3
 	k8s.io/apimachinery v0.24.0

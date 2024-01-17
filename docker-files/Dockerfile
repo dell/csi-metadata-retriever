@@ -25,7 +25,7 @@ RUN mkdir -p /go/src
 COPY ./ /go/src/
 WORKDIR /go/src/
 RUN CGO_ENABLED=0 \
-    make build
+    make go-build
 
 # Stage to build the driver image
 FROM $BASEIMAGE AS final

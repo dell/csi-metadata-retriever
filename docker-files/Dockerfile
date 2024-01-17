@@ -14,17 +14,29 @@
 #
 #
 # Dockerfile to build CSI Metadata Retriever sidecar
+# some arguments that must be supplied
+ARG GOVERSION
 ARG BASEIMAGE
 
-FROM $BASEIMAGE
+# Stage to build the driver
+FROM golang:${GOVERSION} as builder
 
+RUN mkdir -p /go/src
+COPY ./ /go/src/
+WORKDIR /go/src/
+RUN CGO_ENABLED=0 \
+    make build
+
+# Stage to build the driver image
+FROM $BASEIMAGE AS final
+
+COPY --from=builder /go/src/csi-metadata-retriever /
 LABEL vendor="Dell Inc." \
       name="csi-metadata-retriever" \
       summary="CSI Metadata Retriever sidecar" \
       description="CSI Metadata Retriever sidecar for metadata retrievel via kubeapi" \
       version="1.6.0" \
       license="Apache-2.0"
-
 COPY licenses /licenses
-COPY "csi-metadata-retriever" .
+#COPY "csi-metadata-retriever" .
 ENTRYPOINT ["/csi-metadata-retriever"]

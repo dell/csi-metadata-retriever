@@ -32,7 +32,25 @@ endif
 
 
 .PHONY: all
-all: go-build
+
+all: help
+
+# include an overrides file, which sets up default values and allows user overrides
+include overrides.mk
+
+# Help target, prints usefule information
+help:
+	@echo
+	@echo "The following targets are commonly used:"
+	@echo
+	@echo "go-build            - Builds the code locally"
+	@echo "check            - Runs the suite of code checking tools: lint, format, etc"
+	@echo "clean            - Cleans the local build"
+	@echo "docker           - Builds the code within a golang container and then creates the driver image"
+	@echo "push             - Pushes the built container to a target registry"
+	@echo "test             - Runs the unit tests"
+	@echo
+	@make -s overrides-help
 
 ifneq (on,$(GO111MODULE))
 export GO111MODULE := on

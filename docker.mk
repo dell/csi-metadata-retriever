@@ -20,7 +20,7 @@ include overrides.mk
 
 docker: download-csm-common
 	$(eval include csm-common.mk)
-	echo "Building: $(REGISTRY)/$(IMAGENAME):$(MAJOR).$(MINOR).$(PATCH) RELNOTE $(RELNOTE)"
+	echo "Building: $(REGISTRY)/$(IMAGENAME):v$(MAJOR).$(MINOR).$(PATCH) RELNOTE $(RELNOTE)"
 	echo "$(DOCKER_FILE)"
 	$(BUILDER) build -f $(DOCKER_FILE) -t "$(REGISTRY)/$(IMAGENAME):v$(MAJOR).$(MINOR).$(PATCH)$(RELNOTE)" --build-arg BASEIMAGE=$(DEFAULT_BASEIMAGE) --build-arg GOVERSION=$(GOVERSION) .
 

@@ -18,18 +18,6 @@
 -include vars.mk
 include overrides.mk
 
-ifndef MAJOR
-	MAJOR=1
-endif
-
-ifndef MINOR
-	MINOR=6
-endif
-
-ifndef PATCH
-	PATCH=0
-endif
-
 docker: download-csm-common
 	$(eval include csm-common.mk)
 	echo "Building: $(REGISTRY)/$(IMAGENAME):$(MAJOR).$(MINOR).$(PATCH) RELNOTE $(RELNOTE)"
@@ -38,14 +26,14 @@ docker: download-csm-common
 
 docker-no-cache: download-csm-common
 	$(eval include csm-common.mk)
-	echo "MAJOR $(MAJOR) MINOR $(MINOR) PATCH $(PATCH) RELNOTE $(RELNOTE)"
+	echo "Building: $(REGISTRY)/$(IMAGENAME):$(MAJOR).$(MINOR).$(PATCH) RELNOTE $(RELNOTE)"
 	echo "$(DOCKER_FILE) --no-cache"
-	$(BUILDER) build --no-cache --pull -f $(DOCKER_FILE) -t "$(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):v$(MAJOR).$(MINOR).$(PATCH)$(RELNOTE)" --build-arg BASEIMAGE=$(DEFAULT_BASEIMAGE) .
+	$(BUILDER) build --no-cache --pull -f $(DOCKER_FILE) -t "$(REGISTRY)/$(IMAGENAME):v$(MAJOR).$(MINOR).$(PATCH)$(RELNOTE)" --build-arg BASEIMAGE=$(DEFAULT_BASEIMAGE) --build-arg GOVERSION=$(GOVERSION) .
 
 
 push:   
-	echo "MAJOR $(MAJOR) MINOR $(MINOR) PATCH $(PATCH) RELNOTE $(RELNOTE)"
-	$(BUILDER) push "$(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):v$(MAJOR).$(MINOR).$(PATCH)$(RELNOTE)"
+	echo "Pushing MAJOR $(MAJOR) MINOR $(MINOR) PATCH $(PATCH) RELNOTE $(RELNOTE)"
+	$(BUILDER) push "$(REGISTRY)/$(IMAGENAME):v$(MAJOR).$(MINOR).$(PATCH)$(RELNOTE)"
 
 download-csm-common:
 	curl -O -L https://raw.githubusercontent.com/dell/csm/main/config/csm-common.mk

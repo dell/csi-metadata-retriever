@@ -21,7 +21,7 @@
 DEFAULT_GOVERSION="1.21"
 DEFAULT_REGISTRY="dellemc"
 DEFAULT_IMAGENAME="csi-metadata-retriever"
-DEFAULT_BUILDSTAGE="final"
+
 
 # set the GOVERSION if needed
 ifeq ($(GOVERSION),)
@@ -38,16 +38,28 @@ ifeq ($(IMAGENAME),)
 export IMAGENAME="$(DEFAULT_IMAGENAME)"
 endif
 
-# set the BUILDSTAGE if needed
-ifeq ($(BUILDSTAGE),)
-export BUILDSTAGE="$(DEFAULT_BUILDSTAGE)"
-endif
 
 # figure out if podman or docker should be used (use podman if found)
 ifneq (, $(shell which podman 2>/dev/null))
 export BUILDER=podman
 else
 export BUILDER=docker
+endif
+
+ifdef NOTES
+	RELNOTE="$(NOTES)"
+else
+	RELNOTE=
+endif
+
+ifndef MAJOR
+	MAJOR=1
+endif
+ifndef MINOR
+	MINOR=6
+endif
+ifndef PATCH
+	PATCH=0
 endif
 
 # target to print some help regarding these overrides and how to use them
@@ -61,10 +73,5 @@ overrides-help:
 	@echo "              Current setting is: $(REGISTRY)"
 	@echo "IMAGENAME   - The image name to be built, defaut is: $(DEFAULT_IMAGENAME)"
 	@echo "              Current setting is: $(IMAGENAME)"
-	@echo "BUILDSTAGE  - The Dockerfile build stage to execute, default is: $(DEFAULT_BUILDSTAGE)"
-	@echo "              Stages can be found by looking at the Dockerfile"
-	@echo "              Current setting is: $(BUILDSTAGE)"
 	@echo
-        
-	
 

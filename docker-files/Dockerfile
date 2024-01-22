@@ -1,6 +1,6 @@
 #
 #
-# Copyright © 2023 Dell Inc. or its subsidiaries. All Rights Reserved.
+# Copyright © 2023 - 2024 Dell Inc. or its subsidiaries. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,17 +14,27 @@
 #
 #
 # Dockerfile to build CSI Metadata Retriever sidecar
+# some arguments that must be supplied
+ARG GOVERSION
 ARG BASEIMAGE
+# Stage to build the driver
+FROM golang:${GOVERSION} as builder
 
-FROM $BASEIMAGE
+RUN mkdir -p /go/src
+COPY ./ /go/src/
+WORKDIR /go/src/
+RUN CGO_ENABLED=0 \
+    make go-build
 
+# Stage to build the driver image
+FROM $BASEIMAGE AS final
+
+COPY --from=builder /go/src/csi-metadata-retriever /
 LABEL vendor="Dell Inc." \
       name="csi-metadata-retriever" \
       summary="CSI Metadata Retriever sidecar" \
       description="CSI Metadata Retriever sidecar for metadata retrievel via kubeapi" \
       version="1.6.0" \
       license="Apache-2.0"
-
 COPY licenses /licenses
-COPY "csi-metadata-retriever" .
 ENTRYPOINT ["/csi-metadata-retriever"]

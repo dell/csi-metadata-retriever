@@ -17,7 +17,6 @@
 # some arguments that must be supplied
 ARG GOVERSION
 ARG BASEIMAGE
-ARG VERSION
 # Stage to build the driver
 FROM golang:${GOVERSION} as builder
 
@@ -35,7 +34,7 @@ LABEL vendor="Dell Inc." \
       name="csi-metadata-retriever" \
       summary="CSI Metadata Retriever sidecar" \
       description="CSI Metadata Retriever sidecar for metadata retrievel via kubeapi" \
-      version=$(VERSION) \
+      version="1.6.0" \
       license="Apache-2.0"
 COPY licenses /licenses
 ENTRYPOINT ["/csi-metadata-retriever"]

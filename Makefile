@@ -24,7 +24,7 @@ ifndef MINOR
     MINOR=6
 endif
 ifndef PATCH
-    PATCH=0
+    PATCH=1
 endif
 ifndef NOTES
 	NOTES=

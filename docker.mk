@@ -48,7 +48,7 @@ ifndef MINOR
 endif
 
 ifndef PATCH
-	PATCH=0
+	PATCH=1
 endif
 
 docker: download-csm-common

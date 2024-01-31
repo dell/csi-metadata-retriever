@@ -22,7 +22,7 @@ LABEL vendor="Dell Inc." \
       name="csi-metadata-retriever" \
       summary="CSI Metadata Retriever sidecar" \
       description="CSI Metadata Retriever sidecar for metadata retrievel via kubeapi" \
-      version="1.6.0" \
+      version="1.6.1" \
       license="Apache-2.0"
 
 COPY licenses /licenses

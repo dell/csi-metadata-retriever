@@ -18,14 +18,14 @@
 
 
 # DEFAULT values
-DEFAULT_GOVERSION="1.21"
+DEFAULT_GOIMAGE=$(shell sed -En 's/^go (.*)$$/\1/p' go.mod)
 DEFAULT_REGISTRY="dellemc"
 DEFAULT_IMAGENAME="csi-metadata-retriever"
 
 
-# set the GOVERSION if needed
-ifeq ($(GOVERSION),)
-export GOVERSION="$(DEFAULT_GOVERSION)"
+# set the GOIMAGE if needed
+ifeq ($(GOIMAGE),)
+export GOIMAGE="$(DEFAULT_GOIMAGE)"
 endif
 
 # set the REGISTRY if needed
@@ -67,8 +67,8 @@ overrides-help:
 	@echo
 	@echo "The following environment variables can be set to control the build"
 	@echo
-	@echo "GOVERSION   - The version of Go to build with, default is: $(DEFAULT_GOVERSION)"
-	@echo "              Current setting is: $(GOVERSION)"
+	@echo "GOIMAGE   - The version of Go to build with, default is: $(DEFAULT_GOIMAGE)"
+	@echo "              Current setting is: $(GOIMAGE)"
 	@echo "REGISTRY    - The registry to push images to, default is: $(DEFAULT_REGISTRY)"
 	@echo "              Current setting is: $(REGISTRY)"
 	@echo "IMAGENAME   - The image name to be built, defaut is: $(DEFAULT_IMAGENAME)"

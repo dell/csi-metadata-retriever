@@ -15,10 +15,10 @@
 #
 # Dockerfile to build CSI Metadata Retriever sidecar
 # some arguments that must be supplied
-ARG GOVERSION
+ARG GOIMAGE
 ARG BASEIMAGE
 # Stage to build the driver
-FROM golang:${GOVERSION} as builder
+FROM $GOIMAGE as builder
 
 RUN mkdir -p /go/src
 COPY ./ /go/src/

@@ -57,9 +57,18 @@ func Run(
 	if v, ok := csictx.LookupEnv(ctx, gocsi.EnvVarDebug); ok {
 		/* #nosec G104 */
 		if ok, _ := strconv.ParseBool(v); ok {
-			csictx.Setenv(ctx, gocsi.EnvVarLogLevel, "debug")
-			csictx.Setenv(ctx, gocsi.EnvVarReqLogging, "true")
-			csictx.Setenv(ctx, gocsi.EnvVarRepLogging, "true")
+			err := csictx.Setenv(ctx, gocsi.EnvVarLogLevel, "debug")
+			if err != nil {
+				log.Warnf("failed to set EnvVarLogLevel")
+			}
+			err = csictx.Setenv(ctx, gocsi.EnvVarReqLogging, "true")
+			if err != nil {
+				log.Warnf("failed to set EnvVarReqLogging")
+			}
+			err = csictx.Setenv(ctx, gocsi.EnvVarRepLogging, "true")
+			if err != nil {
+				log.Warnf("failed to set EnvVarRepLogging")
+			}
 		}
 	}
 
@@ -130,7 +139,10 @@ func Run(
 			/* #nosec G104 */
 			if l.Addr().Network() == netUnix {
 				sockFile := l.Addr().String()
-				os.RemoveAll(sockFile)
+				err := os.RemoveAll(sockFile)
+				if err != nil {
+					log.Warnf("failed to remove sock file: %s", err)
+				}
 				log.WithField("path", sockFile).Info("removed sock file")
 			}
 		})

@@ -359,8 +359,14 @@ func (sp *Plugin) initEnvVars(ctx context.Context) {
 	if v, ok := csictx.LookupEnv(ctx, gocsi.EnvVarDebug); ok {
 		/* #nosec G104 */
 		if ok, _ := strconv.ParseBool(v); ok {
-			csictx.Setenv(ctx, gocsi.EnvVarReqLogging, "true")
-			csictx.Setenv(ctx, gocsi.EnvVarRepLogging, "true")
+			err := csictx.Setenv(ctx, gocsi.EnvVarReqLogging, "true")
+			if err != nil {
+				log.Warnf("failed to set EnvVarReqLogging")
+			}
+			err = csictx.Setenv(ctx, gocsi.EnvVarRepLogging, "true")
+			if err != nil {
+				log.Warnf("failed to set EnvVarRepLogging")
+			}
 		}
 	}
 

@@ -358,9 +358,12 @@ func (sp *Plugin) initEnvVars(ctx context.Context) {
 	// Check for the debug value.
 	if v, ok := csictx.LookupEnv(ctx, gocsi.EnvVarDebug); ok {
 		/* #nosec G104 */
-		if ok, _ := strconv.ParseBool(v); ok {
+		if ok, err := strconv.ParseBool(v); ok {
 			csictx.Setenv(ctx, gocsi.EnvVarReqLogging, "true")
 			csictx.Setenv(ctx, gocsi.EnvVarRepLogging, "true")
+		}
+		if err !=nil {
+			log.Warnf("Unable to parse EnvVarDebug", err)
 		}
 	}
 

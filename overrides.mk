@@ -56,7 +56,7 @@ ifndef MAJOR
 	MAJOR=1
 endif
 ifndef MINOR
-	MINOR=6
+	MINOR=7
 endif
 ifndef PATCH
 	PATCH=0

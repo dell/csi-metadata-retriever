@@ -25,9 +25,7 @@ import (
 	gocsiutils "github.com/dell/gocsi/utils"
 )
 
-var (
-	emptyRX = regexp.MustCompile(`^\s*$`)
-)
+var emptyRX = regexp.MustCompile(`^\s*$`)
 
 // GetCSIEndpoint returns the network address specified by the
 // environment variable CSI_RETRIEVER_ENDPOINT.

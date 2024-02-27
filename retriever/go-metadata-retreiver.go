@@ -39,7 +39,6 @@ import (
 // PluginProvider is able to serve a gRPC endpoint that provides
 // the CSI services: Retriever
 type PluginProvider interface {
-
 	// Serve accepts incoming connections on the listener lis, creating
 	// a new ServerTransport and service goroutine for each. The service
 	// goroutine read gRPC requests and then call the registered handlers
@@ -173,7 +172,7 @@ func (sp *Plugin) Serve(ctx context.Context, lis net.Listener) error {
 // It cancels all active RPCs on the server side and the corresponding
 // pending RPCs on the client side will get notified by connection
 // errors.
-func (sp *Plugin) Stop(ctx context.Context) {
+func (sp *Plugin) Stop(_ context.Context) {
 	sp.stopOnce.Do(func() {
 		if sp.server != nil {
 			sp.server.Stop()
@@ -185,7 +184,7 @@ func (sp *Plugin) Stop(ctx context.Context) {
 // GracefulStop stops the gRPC server gracefully. It stops the server
 // from accepting new connections and RPCs and blocks until all the
 // pending RPCs are finished.
-func (sp *Plugin) GracefulStop(ctx context.Context) {
+func (sp *Plugin) GracefulStop(_ context.Context) {
 	sp.stopOnce.Do(func() {
 		if sp.server != nil {
 			sp.server.GracefulStop()
@@ -197,8 +196,8 @@ func (sp *Plugin) GracefulStop(ctx context.Context) {
 const netUnix = "unix"
 
 func (sp *Plugin) initEndpointPerms(
-	ctx context.Context, lis net.Listener) error {
-
+	ctx context.Context, lis net.Listener,
+) error {
 	if lis.Addr().Network() != netUnix {
 		return nil
 	}
@@ -228,8 +227,8 @@ func (sp *Plugin) initEndpointPerms(
 }
 
 func (sp *Plugin) initEndpointOwner(
-	ctx context.Context, lis net.Listener) error {
-
+	ctx context.Context, lis net.Listener,
+) error {
 	if lis.Addr().Network() != netUnix {
 		return nil
 	}
@@ -324,7 +323,6 @@ func (sp *Plugin) setenv(key, val string) error {
 }
 
 func (sp *Plugin) initEnvVars(ctx context.Context) {
-
 	// Copy the environment variables from the public EnvVar
 	// string slice to the private envVars map for quick lookup.
 	sp.envVars = map[string]string{}

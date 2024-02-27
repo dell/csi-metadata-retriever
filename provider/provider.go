@@ -38,10 +38,10 @@ func New() retriever.PluginProvider {
 		// modify the SP's interceptors, server options, or prevent the
 		// server from starting by returning a non-nil error.
 		BeforeServe: func(
-			ctx context.Context,
-			sp *retriever.Plugin,
-			lis net.Listener) error {
-
+			_ context.Context,
+			_ *retriever.Plugin,
+			_ net.Listener,
+		) error {
 			log.WithField("service", "MetadataRetriever").Debug("BeforeServe")
 			return nil
 		},

@@ -40,8 +40,8 @@ func New() retriever.PluginProvider {
 		BeforeServe: func(
 			ctx context.Context,
 			sp *retriever.Plugin,
-			lis net.Listener) error {
-
+			lis net.Listener,
+		) error {
 			log.WithField("service", "MetadataRetriever").Debug("BeforeServe")
 			return nil
 		},

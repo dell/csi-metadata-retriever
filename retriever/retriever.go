@@ -64,15 +64,15 @@ func NewMetadataRetrieverClient(conn *grpc.ClientConn, timeout time.Duration) *M
 func (s *MetadataRetrieverClientType) GetPVCLabels(
 	ctx context.Context,
 	req *GetPVCLabelsRequest) (
-	*GetPVCLabelsResponse, error) {
-
+	*GetPVCLabelsResponse, error,
+) {
 	log.Infof("Get PVC labels for %s in namespace %s", req.Name, req.NameSpace)
 	if req.Name == "" {
 		return nil, errors.New(
 			"PVC Name cannot be empty")
 	}
 
-	//TODO: config and clientset to be moved to BeforeServe()
+	// TODO: config and clientset to be moved to BeforeServe()
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		log.Error("Error getting cluster config: ", err)

@@ -59,7 +59,7 @@ ifndef MINOR
 	MINOR=7
 endif
 ifndef PATCH
-	PATCH=0
+	PATCH=3
 endif
 
 # target to print some help regarding these overrides and how to use them

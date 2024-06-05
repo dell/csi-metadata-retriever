@@ -56,10 +56,10 @@ ifndef MAJOR
 	MAJOR=1
 endif
 ifndef MINOR
-	MINOR=7
+	MINOR=8
 endif
 ifndef PATCH
-	PATCH=3
+	PATCH=0
 endif
 
 # target to print some help regarding these overrides and how to use them

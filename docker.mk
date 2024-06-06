@@ -35,7 +35,7 @@ build-base-image: download-csm-common
         @echo "Building base image from $(DEFAULT_BASEIMAGE) and loading dependencies..."
         ./scripts/build_ubi_micro.sh $(DEFAULT_BASEIMAGE)
         @echo "Base image build: SUCCESS"
-        $(eval BASEIMAGE=localhost/mdr-ubimicro:latest)
+        $(eval BASEIMAGE=mdr-ubimicro:latest)
 
 push:   
 	echo "Pushing MAJOR $(MAJOR) MINOR $(MINOR) PATCH $(PATCH) RELNOTE $(RELNOTE)"

@@ -71,7 +71,7 @@ clean:
 # Generates the docker container (but does not push)
 docker:
 	go generate .
-	make -f docker.mk DOCKER_FILE=docker-files/Dockerfile docker
+	make -f docker.mk DOCKER_FILE=docker-files/Dockerfile  build-base-image docker
 
 # Same as `docker` but without cached layers and will pull latest version of base image
 docker-no-cache:

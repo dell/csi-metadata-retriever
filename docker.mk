@@ -31,11 +31,11 @@ docker-no-cache: download-csm-common
 	$(BUILDER) build --no-cache --pull -f $(DOCKER_FILE) -t "$(REGISTRY)/$(IMAGENAME):v$(MAJOR).$(MINOR).$(PATCH)$(RELNOTE)" --build-arg BASEIMAGE=$(DEFAULT_BASEIMAGE) --build-arg GOIMAGE=$(DEFAULT_GOIMAGE) .
 
 build-base-image: download-csm-common
-        $(eval include csm-common.mk)
-        @echo "Building base image from $(DEFAULT_BASEIMAGE) and loading dependencies..."
-        ./scripts/build_ubi_micro.sh $(DEFAULT_BASEIMAGE)
-        @echo "Base image build: SUCCESS"
-        $(eval BASEIMAGE=mdr-ubimicro:latest)
+	$(eval include csm-common.mk)
+	@echo "Building base image from $(DEFAULT_BASEIMAGE) and loading dependencies..."
+	./scripts/build_ubi_micro.sh $(DEFAULT_BASEIMAGE)
+	@echo "Base image build: SUCCESS"
+	$(eval BASEIMAGE=mdr-ubimicro:latest)
 
 push:   
 	echo "Pushing MAJOR $(MAJOR) MINOR $(MINOR) PATCH $(PATCH) RELNOTE $(RELNOTE)"

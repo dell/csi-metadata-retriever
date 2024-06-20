@@ -27,6 +27,7 @@ import (
 	"github.com/dell/csi-metadata-retriever/service"
 	"github.com/dell/csi-metadata-retriever/utils"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var grpcClient *grpc.ClientConn
@@ -84,7 +85,7 @@ func startServer(ctx context.Context, sp *retriever.Plugin, gracefulStop bool) (
 	fmt.Printf("network %v addr %v\n", network, addr)
 
 	clientOpts := []grpc.DialOption{
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
 
 	// Create a client for the piped connection.

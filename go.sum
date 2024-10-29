@@ -13,8 +13,8 @@ github.com/coreos/go-systemd/v22 v22.5.0/go.mod h1:Y58oyj3AT4RCenI/lSvhwexgC+NSV
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/dell/gocsi v1.11.0 h1:P84VOPd1V55JQjx4tfd/6QOlVQRQkYUqmGqbzPKeyUQ=
-github.com/dell/gocsi v1.11.0/go.mod h1:LzGAsEIjBxVXJuabzsG3/MsdCOczxDE1IWOBxzXIUhw=
+github.com/dell/gocsi v1.12.0 h1:Dn/8f2BLovo57T/aC5pP/4Eqz4h6WX8SbX+hxT5NlvQ=
+github.com/dell/gocsi v1.12.0/go.mod h1:hJURrmDrXDGW4xVtgi5Kx6zUsU3ht9l+nlreNx33rf0=
 github.com/emicklei/go-restful/v3 v3.11.0 h1:rAQeMHw1c7zTmncogyy8VvRZwtkmkZ4FxERmMY4rD+g=
 github.com/emicklei/go-restful/v3 v3.11.0/go.mod h1:6n3XBCmQQb25CM2LCACGz8ukIrRry+4bhvbpWn3mrbc=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=

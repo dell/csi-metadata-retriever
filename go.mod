@@ -6,7 +6,7 @@ require (
 	github.com/dell/gocsi v1.12.0
 	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/net v0.32.0
-	google.golang.org/grpc v1.69.0
+	google.golang.org/grpc v1.69.2
 	k8s.io/apimachinery v0.32.0
 	k8s.io/client-go v0.32.0
 )

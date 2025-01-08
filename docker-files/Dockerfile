@@ -30,11 +30,13 @@ RUN CGO_ENABLED=0 \
 FROM $BASEIMAGE AS final
 
 COPY --from=builder /go/src/csi-metadata-retriever /
-LABEL vendor="Dell Inc." \
+LABEL vendor="Dell Technologies" \
+      maintainer="Dell Technologies" \
       name="csi-metadata-retriever" \
       summary="CSI Metadata Retriever sidecar" \
-      description="CSI Metadata Retriever sidecar for metadata retrievel via kubeapi" \
-      version="1.9.0" \
+      description="CSI Metadata Retriever sidecar for metadata retrieval via the Kubernetes API" \
+      release="1.13.0" \
+      version="1.10.0" \
       license="Apache-2.0"
 COPY licenses /licenses
 ENTRYPOINT ["/csi-metadata-retriever"]

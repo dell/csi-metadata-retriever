@@ -8,7 +8,7 @@ require (
 	github.com/dell/gocsi v1.13.0
 	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/net v0.34.0
-	google.golang.org/grpc v1.69.2
+	google.golang.org/grpc v1.69.4
 	k8s.io/apimachinery v0.32.0
 	k8s.io/client-go v0.32.0
 )

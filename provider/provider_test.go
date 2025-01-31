@@ -31,9 +31,11 @@ type mockListener struct{}
 func (m *mockListener) Accept() (net.Conn, error) {
 	return nil, nil
 }
+
 func (m *mockListener) Close() error {
 	return nil
 }
+
 func (m *mockListener) Addr() net.Addr {
 	return nil
 }
@@ -50,7 +52,7 @@ func TestNew(t *testing.T) {
 				"X_CSI_SPEC_REQ_VALIDATION=true",
 				"X_CSI_SERIAL_VOL_ACCESS=true",
 			},
-			expectedBeforeServe: func(ctx context.Context, plugin *retriever.Plugin, listener net.Listener) error {
+			expectedBeforeServe: func(_ context.Context, _ *retriever.Plugin, _ net.Listener) error {
 				return nil
 			},
 		},

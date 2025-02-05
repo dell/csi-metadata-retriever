@@ -14,6 +14,11 @@ func TestGetPVCLabels(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error for empty PVC Name")
 	}
+
+	_, err = client.GetPVCLabels(context.Background(), &GetPVCLabelsRequest{Name: "pvc"})
+	if err == nil {
+		t.Error("Expected error for empty PVC Name")
+	}
 }
 
 func TestNewMetadataRetrieverClient(t *testing.T) {

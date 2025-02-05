@@ -14,21 +14,67 @@
  *
  */
 
-package retriever_test
+package retriever
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
-	"github.com/dell/csi-metadata-retriever/retriever"
+	"bou.ke/monkey"
 	"github.com/dell/csi-metadata-retriever/service"
 	"github.com/dell/csi-metadata-retriever/utils"
+	"github.com/dell/gocsi"
+	csictx "github.com/dell/gocsi/context"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
+
+// MockListener mocks a net.Listener for testing.
+type MockListener struct {
+	net.Listener
+	// addr net.Addr
+}
+
+func (m *MockListener) Accept() (net.Conn, error) {
+	return nil, errors.New("mock accept error")
+}
+
+func (m *MockListener) Close() error {
+	return nil
+}
+
+func (m *MockListener) Addr() net.Addr {
+	return &MockAddr{network: "unix", address: "/tmp/mock.sock"}
+	// return m.addr
+}
+
+// MockAddr mocks a net.Addr for testing.
+type MockAddr struct {
+	network string
+	address string
+}
+
+func (m *MockAddr) Network() string {
+	return m.network
+}
+
+func (m *MockAddr) String() string {
+	return m.address
+}
+
+// MockService mocks a service.Service for testing.
+type MockService struct {
+	service.Service
+	mock.Mock
+}
 
 var grpcClient *grpc.ClientConn
 
@@ -37,7 +83,7 @@ func TestServer_StartGracefulStop(_ *testing.T) {
 	os.Setenv("CSI_RETRIEVER_ENDPOINT", "/tmp/csi_retriever_test.sock")
 
 	ctx := context.Background()
-	sp := new(retriever.Plugin)
+	sp := new(Plugin)
 	sp.MetadataRetrieverService = service.New()
 
 	fmt.Printf("calling startServer")
@@ -53,7 +99,7 @@ func TestServer_StartStop(_ *testing.T) {
 	os.Setenv("CSI_RETRIEVER_ENDPOINT", "/tmp/csi_retriever_test.sock")
 
 	ctx := context.Background()
-	sp := new(retriever.Plugin)
+	sp := new(Plugin)
 	sp.MetadataRetrieverService = service.New()
 
 	fmt.Printf("calling startServer")
@@ -64,7 +110,7 @@ func TestServer_StartStop(_ *testing.T) {
 	stop()
 }
 
-func startServer(ctx context.Context, sp *retriever.Plugin, gracefulStop bool) (*grpc.ClientConn, func()) {
+func startServer(ctx context.Context, sp *Plugin, gracefulStop bool) (*grpc.ClientConn, func()) {
 	lis, err := utils.GetCSIEndpointListener()
 	if err != nil {
 		fmt.Printf("couldn't open listener: %s\n", err.Error())
@@ -106,5 +152,202 @@ func startServer(ctx context.Context, sp *retriever.Plugin, gracefulStop bool) (
 	return client, func() {
 		client.Close()
 		sp.Stop(ctx)
+	}
+}
+
+func TestPlugin_initEndpointPerms(t *testing.T) {
+	// Mock os.Chmod and os.Stat to avoid actual filesystem changes
+	monkey.Patch(os.Chmod, func(name string, mode os.FileMode) error {
+		return nil
+	})
+	defer monkey.Unpatch(os.Chmod)
+
+	tests := []struct {
+		name        string
+		plugin      *Plugin
+		envVarValue string
+		expectedErr error
+	}{
+		// {
+		//     name: "Successful Chmod",
+		//     plugin: &Plugin{
+		//         EnvVars: []string{},
+		//     },
+		//     envVarValue: "0777",
+		//     expectedErr: nil,
+		// },
+		{
+			name: "Invalid Permission Value",
+			plugin: &Plugin{
+				EnvVars: []string{},
+			},
+			envVarValue: "invalid",
+			expectedErr: &strconv.NumError{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := csictx.WithLookupEnv(context.Background(), func(key string) (string, bool) {
+				if key == gocsi.EnvVarEndpointPerms {
+					return tt.envVarValue, true
+				}
+				return "", false
+			})
+
+			lis := &MockListener{}
+			err := tt.plugin.initEndpointPerms(ctx, lis)
+			if tt.expectedErr != nil {
+				assert.Error(t, err)
+				assert.IsType(t, tt.expectedErr, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestPlugin_initEndpointOwner(t *testing.T) {
+	monkey.Patch(os.Chown, func(name string, uid, gid int) error {
+		return nil
+	})
+	defer monkey.Unpatch(os.Chown)
+
+	tests := []struct {
+		name        string
+		plugin      *Plugin
+		uid         string
+		gid         string
+		expectedErr bool
+	}{
+		{
+			name: "Successful Chown",
+			plugin: &Plugin{
+				EnvVars: []string{},
+			},
+			uid:         "1000",
+			gid:         "1000",
+			expectedErr: false,
+		},
+		{
+			name: "Invalid UID Format",
+			plugin: &Plugin{
+				EnvVars: []string{},
+			},
+			uid:         "invalid",
+			expectedErr: true,
+		},
+		{
+			name: "Invalid GID Format",
+			plugin: &Plugin{
+				EnvVars: []string{},
+			},
+			gid:         "invalid",
+			expectedErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := csictx.WithLookupEnv(context.Background(), func(key string) (string, bool) {
+				switch key {
+				case gocsi.EnvVarEndpointUser:
+					return tt.uid, true
+				case gocsi.EnvVarEndpointGroup:
+					return tt.gid, true
+				default:
+					return "", false
+				}
+			})
+
+			lis := &MockListener{}
+			err := tt.plugin.initEndpointOwner(ctx, lis)
+			if tt.expectedErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestPlugin_lookupEnv(t *testing.T) {
+	plugin := &Plugin{
+		envVars: map[string]string{
+			"KEY": "value",
+		},
+	}
+	val, ok := plugin.lookupEnv("KEY")
+	assert.True(t, ok)
+	assert.Equal(t, "value", val)
+}
+
+func TestPlugin_setenv(t *testing.T) {
+	plugin := &Plugin{
+		envVars: map[string]string{},
+	}
+	err := plugin.setenv("KEY", "value")
+	assert.NoError(t, err)
+	assert.Equal(t, "value", plugin.envVars["KEY"])
+}
+
+func TestPlugin_initEnvVars(t *testing.T) {
+	os.Setenv(gocsi.EnvVarDebug, "true")
+	defer os.Unsetenv(gocsi.EnvVarDebug)
+	tests := []struct {
+		name               string
+		envVars            []string
+		debugEnabled       bool
+		expectedEnvVars    map[string]string
+		expectDebugLogging bool
+	}{
+		{
+			name: "Normal environment variables",
+			envVars: []string{
+				"KEY1=value1",
+				"KEY2=value2",
+			},
+		},
+		{
+			name:         "Debug environment variable enabled",
+			envVars:      []string{},
+			debugEnabled: true,
+			expectedEnvVars: map[string]string{
+				gocsi.EnvVarReqLogging: "true",
+				gocsi.EnvVarRepLogging: "true",
+			},
+			expectDebugLogging: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			plugin := &Plugin{
+				EnvVars: tt.envVars,
+				envVars: map[string]string{},
+			}
+
+			ctx := context.Background()
+			if tt.debugEnabled {
+				ctx = csictx.WithLookupEnv(ctx, func(key string) (string, bool) {
+					if key == gocsi.EnvVarDebug {
+						return strconv.FormatBool(true), true
+					}
+					return "", false
+				})
+				ctx = csictx.WithSetenv(ctx, func(key, value string) error {
+					plugin.envVars[key] = value
+					return nil
+				})
+			}
+
+			plugin.initEnvVars(ctx)
+
+			for k, v := range tt.expectedEnvVars {
+				val, ok := plugin.envVars[k]
+				assert.True(t, ok, "Expected key %s to be present in envVars", k)
+				assert.Equal(t, v, val)
+			}
+		})
 	}
 }

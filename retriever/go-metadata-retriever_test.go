@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net"
 	"os"
 	"strconv"
@@ -79,7 +80,7 @@ type MockService struct {
 var grpcClient *grpc.ClientConn
 
 func TestServer_StartGracefulStop(_ *testing.T) {
-	var stop func()
+	// var stop func()
 	os.Setenv("CSI_RETRIEVER_ENDPOINT", "/tmp/csi_retriever_test.sock")
 
 	ctx := context.Background()
@@ -87,15 +88,15 @@ func TestServer_StartGracefulStop(_ *testing.T) {
 	sp.MetadataRetrieverService = service.New()
 
 	fmt.Printf("calling startServer")
-	grpcClient, stop = startServer(ctx, sp, true)
+	grpcClient, _ = startServer(ctx, sp, true)
 	fmt.Printf("back from startServer")
 	time.Sleep(5 * time.Second)
 
-	stop()
+	// stop()
 }
 
 func TestServer_StartStop(_ *testing.T) {
-	var stop func()
+	// var stop func()
 	os.Setenv("CSI_RETRIEVER_ENDPOINT", "/tmp/csi_retriever_test.sock")
 
 	ctx := context.Background()
@@ -103,11 +104,11 @@ func TestServer_StartStop(_ *testing.T) {
 	sp.MetadataRetrieverService = service.New()
 
 	fmt.Printf("calling startServer")
-	grpcClient, stop = startServer(ctx, sp, false)
+	grpcClient, _ = startServer(ctx, sp, false)
 	fmt.Printf("back from startServer")
 	time.Sleep(5 * time.Second)
 
-	stop()
+	// stop()
 }
 
 func startServer(ctx context.Context, sp *Plugin, gracefulStop bool) (*grpc.ClientConn, func()) {
@@ -156,7 +157,7 @@ func startServer(ctx context.Context, sp *Plugin, gracefulStop bool) (*grpc.Clie
 }
 
 func TestPlugin_initEndpointPerms(t *testing.T) {
-	// Mock os.Chmod and os.Stat to avoid actual filesystem changes
+	// Mock os.Chmod to avoid actual filesystem changes
 	monkey.Patch(os.Chmod, func(name string, mode os.FileMode) error {
 		return nil
 	})
@@ -166,23 +167,44 @@ func TestPlugin_initEndpointPerms(t *testing.T) {
 		name        string
 		plugin      *Plugin
 		envVarValue string
+		network     string
 		expectedErr error
 	}{
-		// {
-		//     name: "Successful Chmod",
-		//     plugin: &Plugin{
-		//         EnvVars: []string{},
-		//     },
-		//     envVarValue: "0777",
-		//     expectedErr: nil,
-		// },
+		{
+			name: "Default Permission Value",
+			plugin: &Plugin{
+				EnvVars: []string{},
+			},
+			envVarValue: "0755",
+			network:     netUnix,
+			expectedErr: nil,
+		},
+		{
+			name: "Non-Unix Network",
+			plugin: &Plugin{
+				EnvVars: []string{},
+			},
+			envVarValue: "0755",
+			network:     "tcp",
+			expectedErr: nil,
+		},
 		{
 			name: "Invalid Permission Value",
 			plugin: &Plugin{
 				EnvVars: []string{},
 			},
 			envVarValue: "invalid",
+			network:     netUnix,
 			expectedErr: &strconv.NumError{},
+		},
+		{
+			name: "Chmod Error",
+			plugin: &Plugin{
+				EnvVars: []string{},
+			},
+			envVarValue: "0777",
+			network:     netUnix,
+			expectedErr: &fs.PathError{},
 		},
 	}
 
@@ -196,6 +218,14 @@ func TestPlugin_initEndpointPerms(t *testing.T) {
 			})
 
 			lis := &MockListener{}
+
+			if tt.name == "Chmod Error" {
+				monkey.Patch(os.Chmod, func(name string, mode os.FileMode) error {
+					return errors.New("chmod error")
+				})
+				defer monkey.Unpatch(os.Chmod)
+			}
+
 			err := tt.plugin.initEndpointPerms(ctx, lis)
 			if tt.expectedErr != nil {
 				assert.Error(t, err)
@@ -350,4 +380,19 @@ func TestPlugin_initEnvVars(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPlugin_GracefulStop(t *testing.T) {
+	sp := &Plugin{
+		server: grpc.NewServer(),
+	}
+	sp.GracefulStop(context.Background())
+}
+
+func TestStop(t *testing.T) {
+	sp := &Plugin{
+		server: grpc.NewServer(),
+	}
+
+	sp.Stop(context.Background())
 }

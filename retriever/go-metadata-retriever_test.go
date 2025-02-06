@@ -396,3 +396,13 @@ func TestStop(t *testing.T) {
 
 	sp.Stop(context.Background())
 }
+
+func TestServe(t *testing.T) {
+	sp := &Plugin{
+		server: grpc.NewServer(),
+	}
+	lis := &MockListener{}
+
+	err := sp.Serve(context.Background(), lis)
+	assert.Error(t, err)
+}

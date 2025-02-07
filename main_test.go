@@ -159,7 +159,12 @@ func TestRun(t *testing.T) {
 	Run(ctx, appName, appDescription, appUsage, &MockPluginProvider{})
 }
 
-func TestPrintUsaae(t *testing.T) {
+func TestPrintUsage(t *testing.T) {
 	var appName, appDescription, appUsage, binPath string
 	printUsage(appName, appDescription, appUsage, binPath)
+}
+
+func TestRmSockFile(t *testing.T) {
+	var l net.Listener
+	rmSockFile(l)
 }

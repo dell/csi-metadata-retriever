@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"flag"
+	"net"
 	"os"
 	"os/signal"
 	"strconv"
@@ -69,6 +70,24 @@ var printUsage = func(appName, appDescription, appUsage, binPath string) {
 		log.WithError(err).Fatalln("failed emitting usage")
 	}
 	return
+}
+
+var rmSockFileOnce sync.Once
+var rmSockFile = func(l net.Listener) {
+	rmSockFileOnce.Do(func() {
+		if l == nil || l.Addr() == nil {
+			return
+		}
+		/* #nosec G104 */
+		if l.Addr().Network() == netUnix {
+			sockFile := l.Addr().String()
+			err := os.RemoveAll(sockFile)
+			if err != nil {
+				log.Warnf("failed to remove sock file: %s", err)
+			}
+			log.WithField("path", sockFile).Info("removed sock file")
+		}
+	})
 }
 
 // Run launches a CSI storage plug-in.
@@ -130,36 +149,19 @@ func Run(
 
 	// Define a lambda that can be used in the exit handler
 	// to remove a potential UNIX sock file.
-	var rmSockFileOnce sync.Once
-	rmSockFile := func() {
-		rmSockFileOnce.Do(func() {
-			if l == nil || l.Addr() == nil {
-				return
-			}
-			/* #nosec G104 */
-			if l.Addr().Network() == netUnix {
-				sockFile := l.Addr().String()
-				err := os.RemoveAll(sockFile)
-				if err != nil {
-					log.Warnf("failed to remove sock file: %s", err)
-				}
-				log.WithField("path", sockFile).Info("removed sock file")
-			}
-		})
-	}
 
 	trapSignals(func() {
 		sp.GracefulStop(ctx)
-		rmSockFile()
+		rmSockFile(l)
 		log.Info("server stopped gracefully")
 	}, func() {
 		sp.Stop(ctx)
-		rmSockFile()
+		rmSockFile(l)
 		log.Info("server aborted")
 	})
 
 	if err := sp.Serve(ctx, l); err != nil {
-		rmSockFile()
+		rmSockFile(l)
 		log.WithError(err).Fatal("grpc failed")
 	}
 }

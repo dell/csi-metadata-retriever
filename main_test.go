@@ -157,5 +157,9 @@ func TestRun(t *testing.T) {
 	os.Setenv("X_CSI_SPEC_DISABLE_LEN_CHECK", "true")
 
 	Run(ctx, appName, appDescription, appUsage, &MockPluginProvider{})
+}
 
+func TestPrintUsaae(t *testing.T) {
+	var appName, appDescription, appUsage, binPath string
+	printUsage(appName, appDescription, appUsage, binPath)
 }

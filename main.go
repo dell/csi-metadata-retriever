@@ -47,6 +47,30 @@ func main() {
 
 const netUnix = "unix"
 
+var printUsage = func(appName, appDescription, appUsage, binPath string) {
+	// app is the information passed to the printUsage function
+	app := struct {
+		Name        string
+		Description string
+		Usage       string
+		BinPath     string
+	}{
+		appName,
+		appDescription,
+		appUsage,
+		binPath,
+	}
+
+	t, err := template.New("t").Parse(usage)
+	if err != nil {
+		log.WithError(err).Fatalln("failed to parse usage template")
+	}
+	if err := t.Execute(os.Stderr, app); err != nil {
+		log.WithError(err).Fatalln("failed emitting usage")
+	}
+	return
+}
+
 // Run launches a CSI storage plug-in.
 func Run(
 	ctx context.Context,
@@ -82,44 +106,20 @@ func Run(
 	}
 	log.SetLevel(lvl)
 
-	printUsage := func() {
-		// app is the information passed to the printUsage function
-		app := struct {
-			Name        string
-			Description string
-			Usage       string
-			BinPath     string
-		}{
-			appName,
-			appDescription,
-			appUsage,
-			os.Args[0],
-		}
-
-		t, err := template.New("t").Parse(usage)
-		if err != nil {
-			log.WithError(err).Fatalln("failed to parse usage template")
-		}
-		if err := t.Execute(os.Stderr, app); err != nil {
-			log.WithError(err).Fatalln("failed emitting usage")
-		}
-		return
-	}
-
 	// Check for a help flag.
 	fs := flag.NewFlagSet("csp", flag.ExitOnError)
-	fs.Usage = printUsage
+	// fs.Usage = printUsage(appName, appDescription, appUsage, os.Args[0])
 	var help bool
 	fs.BoolVar(&help, "?", false, "")
 	err := fs.Parse(os.Args)
 	if err == flag.ErrHelp || help {
-		printUsage()
+		printUsage(appName, appDescription, appUsage, os.Args[0])
 		os.Exit(1)
 	}
 
 	// If no endpoint is set then print the usage.
 	if os.Getenv(utils.EnvVarEndpoint) == "" {
-		printUsage()
+		printUsage(appName, appDescription, appUsage, os.Args[0])
 		os.Exit(1)
 	}
 

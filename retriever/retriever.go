@@ -1,6 +1,6 @@
 /*
  *
- * Copyright © 2022 Dell Inc. or its subsidiaries. All Rights Reserved.
+ * Copyright © 2022-2025 Dell Inc. or its subsidiaries. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,16 +48,26 @@ type GetPVCLabelsResponse struct {
 
 // MetadataRetrieverClientType holds client connection and timeout
 type MetadataRetrieverClientType struct {
-	conn    *grpc.ClientConn
-	timeout time.Duration
+	conn         *grpc.ClientConn
+	timeout      time.Duration
+	getClientset func() (kubernetes.Interface, error)
 }
 
 // NewMetadataRetrieverClient returns csiclient
 func NewMetadataRetrieverClient(conn *grpc.ClientConn, timeout time.Duration) *MetadataRetrieverClientType {
 	return &MetadataRetrieverClientType{
-		conn:    conn,
-		timeout: timeout,
+		conn:         conn,
+		timeout:      timeout,
+		getClientset: defaultGetClientset,
 	}
+}
+
+func defaultGetClientset() (kubernetes.Interface, error) {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+	return kubernetes.NewForConfig(config)
 }
 
 // GetPVCLabels gets the PVC labels and returns it
@@ -72,14 +82,7 @@ func (s *MetadataRetrieverClientType) GetPVCLabels(
 			"PVC Name cannot be empty")
 	}
 
-	// TODO: config and clientset to be moved to BeforeServe()
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		log.Error("Error getting cluster config: ", err)
-		return nil, err
-	}
-	// creates the clientset
-	clientset, err := kubernetes.NewForConfig(config)
+	clientset, err := s.getClientset()
 	if err != nil {
 		log.Error("Error creating clientset: ", err)
 		return nil, err

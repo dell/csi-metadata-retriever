@@ -1,6 +1,6 @@
 /*
  *
- * Copyright © 2022 Dell Inc. or its subsidiaries. All Rights Reserved.
+ * Copyright © 2022-2025 Dell Inc. or its subsidiaries. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -321,27 +321,61 @@ func TestPlugin_setenv(t *testing.T) {
 	assert.Equal(t, "value", plugin.envVars["KEY"])
 }
 
+func mockLookupEnv(key string) (string, bool) {
+	if key == "KEY1" {
+		return "context_value", true
+	}
+	if key == gocsi.EnvVarDebug {
+		return strconv.FormatBool(true), true
+	}
+	return "", false
+}
+
+func mockSetenv(key, value string) error {
+	if key == gocsi.EnvVarReqLogging || key == gocsi.EnvVarRepLogging {
+		return errors.New("mock setenv error")
+	}
+	return nil
+}
+
 func TestPlugin_initEnvVars(t *testing.T) {
-	os.Setenv(gocsi.EnvVarDebug, "true")
-	defer os.Unsetenv(gocsi.EnvVarDebug)
 	tests := []struct {
 		name               string
 		envVars            []string
-		debugEnabled       bool
 		expectedEnvVars    map[string]string
 		expectDebugLogging bool
 	}{
 		{
 			name: "Normal environment variables",
 			envVars: []string{
-				"KEY1=value1",
-				"KEY2=value2",
+				"KEY1=context_value",
+			},
+			expectedEnvVars: map[string]string{
+				"KEY1": "context_value",
 			},
 		},
 		{
-			name:         "Debug environment variable enabled",
-			envVars:      []string{},
-			debugEnabled: true,
+			name: "Invalid environment variable format",
+			envVars: []string{
+				"INVALID_FORMAT",
+			},
+			expectedEnvVars: map[string]string{},
+		},
+		{
+			name: "Environment variable from context",
+			envVars: []string{
+				"KEY1=",
+			},
+			expectedEnvVars: map[string]string{
+				"KEY1": "context_value",
+			},
+		},
+		{
+			name: "Setenv error handling",
+			envVars: []string{
+				"X_CSI_REQ_LOGGING=true",
+				"X_CSI_REP_LOGGING=true",
+			},
 			expectedEnvVars: map[string]string{
 				gocsi.EnvVarReqLogging: "true",
 				gocsi.EnvVarRepLogging: "true",
@@ -358,18 +392,8 @@ func TestPlugin_initEnvVars(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			if tt.debugEnabled {
-				ctx = csictx.WithLookupEnv(ctx, func(key string) (string, bool) {
-					if key == gocsi.EnvVarDebug {
-						return strconv.FormatBool(true), true
-					}
-					return "", false
-				})
-				ctx = csictx.WithSetenv(ctx, func(key, value string) error {
-					plugin.envVars[key] = value
-					return nil
-				})
-			}
+			ctx = csictx.WithLookupEnv(ctx, mockLookupEnv)
+			ctx = csictx.WithSetenv(ctx, mockSetenv)
 
 			plugin.initEnvVars(ctx)
 

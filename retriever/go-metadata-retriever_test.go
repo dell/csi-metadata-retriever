@@ -316,6 +316,8 @@ func TestPlugin_initEndpointOwner(t *testing.T) {
 				}
 			})
 
+			fmt.Printf("Running test: %s with UID: %s and GID: %s\n", tt.name, tt.uid, tt.gid)
+
 			lis := &MockListener{}
 			err := tt.plugin.initEndpointOwner(ctx, lis)
 			if tt.expectedErr {

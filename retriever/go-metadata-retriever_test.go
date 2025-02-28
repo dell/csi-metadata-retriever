@@ -23,6 +23,7 @@ import (
 	"io/fs"
 	"net"
 	"os"
+	"os/user"
 	"strconv"
 	"testing"
 	"time"
@@ -243,6 +244,19 @@ func TestPlugin_initEndpointOwner(t *testing.T) {
 	})
 	defer monkey.Unpatch(os.Chown)
 
+	// Mock user.LookupId function
+	monkey.Patch(user.LookupId, func(id string) (*user.User, error) {
+		if id == "1000" {
+			return &user.User{
+				Uid:      "1000",
+				Gid:      "1000",
+				Username: "testuser",
+			}, nil
+		}
+		return nil, fmt.Errorf("unknown userid %s", id)
+	})
+	defer monkey.Unpatch(user.LookupId)
+
 	tests := []struct {
 		name        string
 		plugin      *Plugin
@@ -422,11 +436,71 @@ func TestStop(t *testing.T) {
 }
 
 func TestServe(t *testing.T) {
-	sp := &Plugin{
-		server: grpc.NewServer(),
+	tests := []struct {
+		name                      string
+		plugin                    *Plugin
+		beforeServe               func(context.Context, *Plugin, net.Listener) error
+		metadataRetrieverService  service.Service
+		registerAdditionalServers func(*grpc.Server)
+		expectedErr               error
+	}{
+		{
+			name: "BeforeServe Error",
+			plugin: &Plugin{
+				EnvVars: []string{},
+			},
+			beforeServe: func(ctx context.Context, sp *Plugin, lis net.Listener) error {
+				return errors.New("before serve error")
+			},
+			metadataRetrieverService:  &MockService{},
+			registerAdditionalServers: nil,
+			expectedErr:               errors.New("before serve error"),
+		},
+		{
+			name: "No Metadata Retriever Service",
+			plugin: &Plugin{
+				EnvVars: []string{},
+			},
+			beforeServe:               nil,
+			metadataRetrieverService:  nil,
+			registerAdditionalServers: nil,
+			expectedErr:               errors.New("retriever service is required"),
+		},
+		{
+			name: "Error in Register Additional Servers",
+			plugin: &Plugin{
+				EnvVars: []string{},
+			},
+			beforeServe: func(ctx context.Context, sp *Plugin, lis net.Listener) error {
+				return nil
+			},
+			metadataRetrieverService:  &MockService{},
+			registerAdditionalServers: func(s *grpc.Server) {},
+			expectedErr:               errors.New("mock accept error"),
+		},
 	}
-	lis := &MockListener{}
 
-	err := sp.Serve(context.Background(), lis)
-	assert.Error(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sp := tt.plugin
+			sp.BeforeServe = tt.beforeServe
+			sp.MetadataRetrieverService = tt.metadataRetrieverService
+			sp.RegisterAdditionalServers = tt.registerAdditionalServers
+
+			// Use net.Pipe to simulate the listener
+			clientConn, serverConn := net.Pipe()
+			defer clientConn.Close()
+			defer serverConn.Close()
+
+			lis := &MockListener{}
+
+			err := sp.Serve(context.Background(), lis)
+			if tt.expectedErr != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tt.expectedErr.Error(), err.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
 }

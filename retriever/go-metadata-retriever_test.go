@@ -257,6 +257,18 @@ func TestPlugin_initEndpointOwner(t *testing.T) {
 	})
 	defer monkey.Unpatch(user.LookupId)
 
+	// Mock user.LookupGroupId function
+	monkey.Patch(user.LookupGroupId, func(id string) (*user.Group, error) {
+		if id == "1000" {
+			return &user.Group{
+				Gid:  "1000",
+				Name: "testgroup",
+			}, nil
+		}
+		return nil, fmt.Errorf("unknown groupid %s", id)
+	})
+	defer monkey.Unpatch(user.LookupGroupId)
+
 	tests := []struct {
 		name        string
 		plugin      *Plugin

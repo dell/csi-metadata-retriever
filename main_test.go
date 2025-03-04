@@ -68,6 +68,8 @@ func TestIsExitSignal(t *testing.T) {
 
 func TestTrapSignals(t *testing.T) {
 
+	var mu sync.Mutex
+
 	// Mock exit function
 	exit = func(code int) {}
 
@@ -88,7 +90,11 @@ func TestTrapSignals(t *testing.T) {
 
 			sigc := make(chan os.Signal, 1)
 			signal.Notify(sigc, tt.signal)
-			onExit := func() { exitCalled = true }
+			onExit := func() {
+				mu.Lock()
+				exitCalled = true
+				mu.Unlock()
+			}
 			go trapSignals(onExit)
 
 			// Send the signal

@@ -202,7 +202,11 @@ func TestPlugin_initEndpointPerms(t *testing.T) {
 }
 
 func TestPlugin_initEndpointOwner(t *testing.T) {
+	mockOS := new(mocks.MockOS)
 	mockUser := new(mocks.MockUser)
+
+	// Mock os.Chown function
+	mockOS.On("Chown", "/tmp/mock.sock", 1000, 1000).Return(nil)
 
 	// Mock user.LookupId function
 	mockUser.On("LookupId", "1000").Return(&user.User{

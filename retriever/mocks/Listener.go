@@ -85,6 +85,15 @@ type MockService struct {
 	mock.Mock
 }
 
+type MockOS struct {
+	mock.Mock
+}
+
+func (m *MockOS) Chown(name string, uid, gid int) error {
+	args := m.Called(name, uid, gid)
+	return args.Error(0)
+}
+
 type MockUser struct {
 	mock.Mock
 }

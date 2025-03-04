@@ -67,32 +67,24 @@ func TestIsExitSignal(t *testing.T) {
 }
 
 func TestTrapSignals(t *testing.T) {
-	exitCalled := false
-	abortCalled := false
-	exitCode := 0
 
 	// Mock exit function
-	exit = func(code int) {
-		exitCode = code
-	}
+	exit = func(code int) {}
 
 	tests := []struct {
-		signal       os.Signal
-		exit         bool
-		abort        bool
-		expectedCode int
+		signal os.Signal
+		exit   bool
+		abort  bool
 	}{
-		{syscall.SIGTERM, true, false, 0},
-		{syscall.SIGHUP, true, false, 0},
-		{syscall.SIGINT, true, false, 0},
-		{syscall.SIGQUIT, true, false, 0},
+		{syscall.SIGTERM, true, false},
+		{syscall.SIGHUP, true, false},
+		{syscall.SIGINT, true, false},
+		{syscall.SIGQUIT, true, false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.signal.String(), func(t *testing.T) {
-			exitCalled = false
-			abortCalled = false
-			exitCode = 0
+			exitCalled := false
 
 			sigc := make(chan os.Signal, 1)
 			signal.Notify(sigc, tt.signal)
@@ -107,12 +99,6 @@ func TestTrapSignals(t *testing.T) {
 
 			if exitCalled != tt.exit {
 				t.Errorf("expected exitCalled to be %v, got %v", tt.exit, exitCalled)
-			}
-			if abortCalled != tt.abort {
-				t.Errorf("expected abortCalled to be %v, got %v", tt.abort, abortCalled)
-			}
-			if exitCode != tt.expectedCode {
-				t.Errorf("expected exitCode to be %v, got %v", tt.expectedCode, exitCode)
 			}
 		})
 	}

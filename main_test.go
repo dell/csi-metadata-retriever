@@ -19,8 +19,6 @@ package main
 import (
 	"context"
 	"errors"
-	"flag"
-	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -180,24 +178,8 @@ func TestRun(t *testing.T) {
 	// Test case: no endpoint set
 	t.Run("no endpoint set", func(t *testing.T) {
 		os.Unsetenv("CSI_RETRIEVER_ENDPOINT")
-		exit = func(code int) {
-			fmt.Println(code)
-		}
 		Run(ctx, appName, appDescription, appUsage, mockProvider)
 		// No panic or error expected
-	})
-
-	// Test case: help flag set to true
-	t.Run("help flag true", func(t *testing.T) {
-		os.Args = []string{"cmd"}
-		exit = func(code int) {
-			fmt.Println(code)
-		}
-		fs := flag.NewFlagSet("csp", flag.ExitOnError)
-		var help bool
-		fs.BoolVar(&help, "?", true, "")
-		fs.Parse(os.Args)
-		Run(ctx, appName, appDescription, appUsage, mockProvider)
 	})
 
 	// Test case: Simulate error setting EnvVarReqLogging

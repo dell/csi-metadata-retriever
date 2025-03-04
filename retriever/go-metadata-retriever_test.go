@@ -23,7 +23,6 @@ import (
 	"io/fs"
 	"net"
 	"os"
-	"os/user"
 	"strconv"
 	"testing"
 	"time"
@@ -200,35 +199,35 @@ func TestPlugin_initEndpointPerms(t *testing.T) {
 }
 
 func TestPlugin_initEndpointOwner(t *testing.T) {
-	monkey.Patch(os.Chown, func(name string, uid, gid int) error {
-		return nil
-	})
-	defer monkey.Unpatch(os.Chown)
+	// monkey.Patch(os.Chown, func(name string, uid, gid int) error {
+	// 	return nil
+	// })
+	// defer monkey.Unpatch(os.Chown)
 
-	// Mock user.LookupId function
-	monkey.Patch(user.LookupId, func(id string) (*user.User, error) {
-		if id == "1000" {
-			return &user.User{
-				Uid:      "1000",
-				Gid:      "1000",
-				Username: "testuser",
-			}, nil
-		}
-		return nil, fmt.Errorf("unknown userid %s", id)
-	})
-	defer monkey.Unpatch(user.LookupId)
+	// // Mock user.LookupId function
+	// monkey.Patch(user.LookupId, func(id string) (*user.User, error) {
+	// 	if id == "1000" {
+	// 		return &user.User{
+	// 			Uid:      "1000",
+	// 			Gid:      "1000",
+	// 			Username: "testuser",
+	// 		}, nil
+	// 	}
+	// 	return nil, fmt.Errorf("unknown userid %s", id)
+	// })
+	// defer monkey.Unpatch(user.LookupId)
 
-	// Mock user.LookupGroupId function
-	monkey.Patch(user.LookupGroupId, func(id string) (*user.Group, error) {
-		if id == "1000" {
-			return &user.Group{
-				Gid:  "1000",
-				Name: "testgroup",
-			}, nil
-		}
-		return nil, fmt.Errorf("unknown groupid %s", id)
-	})
-	defer monkey.Unpatch(user.LookupGroupId)
+	// // Mock user.LookupGroupId function
+	// monkey.Patch(user.LookupGroupId, func(id string) (*user.Group, error) {
+	// 	if id == "1000" {
+	// 		return &user.Group{
+	// 			Gid:  "1000",
+	// 			Name: "testgroup",
+	// 		}, nil
+	// 	}
+	// 	return nil, fmt.Errorf("unknown groupid %s", id)
+	// })
+	// defer monkey.Unpatch(user.LookupGroupId)
 
 	// Create the mock file
 	mockFile := "/tmp/mock.sock"

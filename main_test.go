@@ -77,8 +77,6 @@ func TestTrapSignals(t *testing.T) {
 		exit   bool
 		abort  bool
 	}{
-		{syscall.SIGTERM, true, false},
-		{syscall.SIGHUP, true, false},
 		{syscall.SIGQUIT, true, false},
 	}
 

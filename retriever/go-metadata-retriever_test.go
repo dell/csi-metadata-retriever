@@ -210,12 +210,27 @@ func TestPlugin_initEndpointOwner(t *testing.T) {
 	}, nil).Once()
 	mockUser.On("LookupId", mock.Anything).Return(nil, fmt.Errorf("unknown userid")).Maybe()
 
+	// Mock user.Lookup function
+	mockUser.On("Lookup", "testuser").Return(&user.User{
+		Uid:      "1000",
+		Gid:      "1000",
+		Username: "testuser",
+	}, nil).Once()
+	mockUser.On("Lookup", mock.Anything).Return(nil, fmt.Errorf("unknown user")).Maybe()
+
 	// Mock user.LookupGroupId function
 	mockUser.On("LookupGroupId", "1000").Return(&user.Group{
 		Gid:  "1000",
 		Name: "testgroup",
 	}, nil).Once()
 	mockUser.On("LookupGroupId", mock.Anything).Return(nil, fmt.Errorf("unknown groupid")).Maybe()
+
+	// Mock user.LookupGroup function
+	mockUser.On("LookupGroup", "testgroup").Return(&user.Group{
+		Gid:  "1000",
+		Name: "testgroup",
+	}, nil).Once()
+	mockUser.On("LookupGroup", mock.Anything).Return(nil, fmt.Errorf("unknown group")).Maybe()
 
 	// Create the mock file
 	mockFile := "/tmp/mock.sock"

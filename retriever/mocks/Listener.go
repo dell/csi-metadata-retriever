@@ -109,7 +109,17 @@ func (m *MockUser) LookupId(id string) (*user.User, error) {
 	return args.Get(0).(*user.User), args.Error(1)
 }
 
+func (m *MockUser) Lookup(id string) (*user.User, error) {
+	args := m.Called(id)
+	return args.Get(0).(*user.User), args.Error(1)
+}
+
 func (m *MockUser) LookupGroupId(id string) (*user.Group, error) {
 	args := m.Called(id)
+	return args.Get(0).(*user.Group), args.Error(1)
+}
+
+func (m *MockUser) LookupGroup(name string) (*user.Group, error) {
+	args := m.Called(name)
 	return args.Get(0).(*user.Group), args.Error(1)
 }

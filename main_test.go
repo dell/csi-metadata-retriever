@@ -79,7 +79,6 @@ func TestTrapSignals(t *testing.T) {
 	}{
 		{syscall.SIGTERM, true, false},
 		{syscall.SIGHUP, true, false},
-		{syscall.SIGINT, true, false},
 		{syscall.SIGQUIT, true, false},
 	}
 

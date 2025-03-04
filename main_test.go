@@ -71,8 +71,6 @@ func TestTrapSignals(t *testing.T) {
 	abortCalled := false
 	exitCode := 0
 
-	onExit := func() { exitCalled = true }
-
 	// Mock exit function
 	exit = func(code int) {
 		exitCode = code
@@ -98,6 +96,7 @@ func TestTrapSignals(t *testing.T) {
 
 			sigc := make(chan os.Signal, 1)
 			signal.Notify(sigc, tt.signal)
+			onExit := func() { exitCalled = true }
 			go trapSignals(onExit)
 
 			// Send the signal

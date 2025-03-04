@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"os/user"
 
 	"github.com/dell/csi-metadata-retriever/service"
 	"github.com/stretchr/testify/mock"
@@ -82,4 +83,18 @@ func (m *MockPluginProvider) Stop(ctx context.Context) {
 type MockService struct {
 	service.Service
 	mock.Mock
+}
+
+type MockUser struct {
+	mock.Mock
+}
+
+func (m *MockUser) LookupId(id string) (*user.User, error) {
+	args := m.Called(id)
+	return args.Get(0).(*user.User), args.Error(1)
+}
+
+func (m *MockUser) LookupGroupId(id string) (*user.Group, error) {
+	args := m.Called(id)
+	return args.Get(0).(*user.Group), args.Error(1)
 }

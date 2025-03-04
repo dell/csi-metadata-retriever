@@ -23,6 +23,7 @@ import (
 	"io/fs"
 	"net"
 	"os"
+	"os/user"
 	"strconv"
 	"testing"
 	"time"
@@ -34,6 +35,8 @@ import (
 	"github.com/dell/gocsi"
 	csictx "github.com/dell/gocsi/context"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -199,42 +202,27 @@ func TestPlugin_initEndpointPerms(t *testing.T) {
 }
 
 func TestPlugin_initEndpointOwner(t *testing.T) {
-	// monkey.Patch(os.Chown, func(name string, uid, gid int) error {
-	// 	return nil
-	// })
-	// defer monkey.Unpatch(os.Chown)
+	mockUser := new(mocks.MockUser)
 
-	// // Mock user.LookupId function
-	// monkey.Patch(user.LookupId, func(id string) (*user.User, error) {
-	// 	if id == "1000" {
-	// 		return &user.User{
-	// 			Uid:      "1000",
-	// 			Gid:      "1000",
-	// 			Username: "testuser",
-	// 		}, nil
-	// 	}
-	// 	return nil, fmt.Errorf("unknown userid %s", id)
-	// })
-	// defer monkey.Unpatch(user.LookupId)
+	// Mock user.LookupId function
+	mockUser.On("LookupId", "1000").Return(&user.User{
+		Uid:      "1000",
+		Gid:      "1000",
+		Username: "testuser",
+	}, nil)
+	mockUser.On("LookupId", mock.Anything).Return(nil, fmt.Errorf("unknown userid"))
 
-	// // Mock user.LookupGroupId function
-	// monkey.Patch(user.LookupGroupId, func(id string) (*user.Group, error) {
-	// 	if id == "1000" {
-	// 		return &user.Group{
-	// 			Gid:  "1000",
-	// 			Name: "testgroup",
-	// 		}, nil
-	// 	}
-	// 	return nil, fmt.Errorf("unknown groupid %s", id)
-	// })
-	// defer monkey.Unpatch(user.LookupGroupId)
+	// Mock user.LookupGroupId function
+	mockUser.On("LookupGroupId", "1000").Return(&user.Group{
+		Gid:  "1000",
+		Name: "testgroup",
+	}, nil)
+	mockUser.On("LookupGroupId", mock.Anything).Return(nil, fmt.Errorf("unknown groupid"))
 
 	// Create the mock file
 	mockFile := "/tmp/mock.sock"
 	file, err := os.Create(mockFile)
-	if err != nil {
-		t.Fatalf("Failed to create mock file: %v", err)
-	}
+	require.NoError(t, err)
 	file.Close()
 	defer os.Remove(mockFile)
 

@@ -28,7 +28,6 @@ import (
 	"testing"
 	"time"
 
-	"bou.ke/monkey"
 	"github.com/dell/csi-metadata-retriever/retriever/mocks"
 	"github.com/dell/csi-metadata-retriever/service"
 	"github.com/dell/csi-metadata-retriever/utils"
@@ -121,11 +120,9 @@ func startServer(ctx context.Context, sp *Plugin, gracefulStop bool) (*grpc.Clie
 }
 
 func TestPlugin_initEndpointPerms(t *testing.T) {
+	mockOS := new(mocks.MockOS)
 	// Mock os.Chmod to avoid actual filesystem changes
-	monkey.Patch(os.Chmod, func(name string, mode os.FileMode) error {
-		return nil
-	})
-	defer monkey.Unpatch(os.Chmod)
+	mockOS.On("Chmod", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	tests := []struct {
 		name        string
@@ -185,10 +182,7 @@ func TestPlugin_initEndpointPerms(t *testing.T) {
 			lis.On("Addr").Return(&mocks.MockAddr{NetworkField: "unix", AddressField: "/tmp/mock.sock"})
 
 			if tt.name == "Chmod Error" {
-				monkey.Patch(os.Chmod, func(name string, mode os.FileMode) error {
-					return errors.New("chmod error")
-				})
-				defer monkey.Unpatch(os.Chmod)
+				mockOS.On("Chmod", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("chmod error"))
 			}
 
 			err := tt.plugin.initEndpointPerms(ctx, lis)

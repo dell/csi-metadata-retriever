@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"os"
 	"os/user"
 
 	"github.com/dell/csi-metadata-retriever/service"
@@ -91,6 +92,11 @@ type MockOS struct {
 
 func (m *MockOS) Chown(name string, uid, gid int) error {
 	args := m.Called(name, uid, gid)
+	return args.Error(0)
+}
+
+func (m *MockOS) Chmod(address string, mode os.FileMode) error {
+	args := m.Called(address, mode)
 	return args.Error(0)
 }
 

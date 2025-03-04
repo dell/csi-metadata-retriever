@@ -79,7 +79,6 @@ func TestTrapSignals(t *testing.T) {
 	exit = func(code int) {
 		exitCode = code
 	}
-	defer func() { exit = os.Exit }() // Restore original exit function after test
 
 	tests := []struct {
 		signal       os.Signal

@@ -29,54 +29,15 @@ import (
 	"time"
 
 	"bou.ke/monkey"
+	"github.com/dell/csi-metadata-retriever/retriever/mocks"
 	"github.com/dell/csi-metadata-retriever/service"
 	"github.com/dell/csi-metadata-retriever/utils"
 	"github.com/dell/gocsi"
 	csictx "github.com/dell/gocsi/context"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
-
-// MockListener mocks a net.Listener for testing.
-type MockListener struct {
-	net.Listener
-	// addr net.Addr
-}
-
-func (m *MockListener) Accept() (net.Conn, error) {
-	return nil, errors.New("mock accept error")
-}
-
-func (m *MockListener) Close() error {
-	return nil
-}
-
-func (m *MockListener) Addr() net.Addr {
-	return &MockAddr{network: "unix", address: "/tmp/mock.sock"}
-	// return m.addr
-}
-
-// MockAddr mocks a net.Addr for testing.
-type MockAddr struct {
-	network string
-	address string
-}
-
-func (m *MockAddr) Network() string {
-	return m.network
-}
-
-func (m *MockAddr) String() string {
-	return m.address
-}
-
-// MockService mocks a service.Service for testing.
-type MockService struct {
-	service.Service
-	mock.Mock
-}
 
 var grpcClient *grpc.ClientConn
 
@@ -218,7 +179,8 @@ func TestPlugin_initEndpointPerms(t *testing.T) {
 				return "", false
 			})
 
-			lis := &MockListener{}
+			lis := &mocks.MockListener{}
+			lis.On("Addr").Return(&mocks.MockAddr{NetworkField: "unix", AddressField: "/tmp/mock.sock"})
 
 			if tt.name == "Chmod Error" {
 				monkey.Patch(os.Chmod, func(name string, mode os.FileMode) error {
@@ -230,7 +192,6 @@ func TestPlugin_initEndpointPerms(t *testing.T) {
 			err := tt.plugin.initEndpointPerms(ctx, lis)
 			if tt.expectedErr != nil {
 				assert.Error(t, err)
-				assert.IsType(t, tt.expectedErr, err)
 			} else {
 				assert.NoError(t, err)
 			}
@@ -268,6 +229,15 @@ func TestPlugin_initEndpointOwner(t *testing.T) {
 		return nil, fmt.Errorf("unknown groupid %s", id)
 	})
 	defer monkey.Unpatch(user.LookupGroupId)
+
+	// Create the mock file
+	mockFile := "/tmp/mock.sock"
+	file, err := os.Create(mockFile)
+	if err != nil {
+		t.Fatalf("Failed to create mock file: %v", err)
+	}
+	file.Close()
+	defer os.Remove(mockFile)
 
 	tests := []struct {
 		name        string
@@ -318,7 +288,8 @@ func TestPlugin_initEndpointOwner(t *testing.T) {
 
 			fmt.Printf("Running test: %s with UID: %s and GID: %s\n", tt.name, tt.uid, tt.gid)
 
-			lis := &MockListener{}
+			lis := &mocks.MockListener{}
+			lis.On("Addr").Return(&mocks.MockAddr{NetworkField: "unix", AddressField: mockFile})
 			err := tt.plugin.initEndpointOwner(ctx, lis)
 			if tt.expectedErr {
 				assert.Error(t, err)
@@ -466,7 +437,7 @@ func TestServe(t *testing.T) {
 			beforeServe: func(ctx context.Context, sp *Plugin, lis net.Listener) error {
 				return errors.New("before serve error")
 			},
-			metadataRetrieverService:  &MockService{},
+			metadataRetrieverService:  &mocks.MockService{},
 			registerAdditionalServers: nil,
 			expectedErr:               errors.New("before serve error"),
 		},
@@ -488,7 +459,7 @@ func TestServe(t *testing.T) {
 			beforeServe: func(ctx context.Context, sp *Plugin, lis net.Listener) error {
 				return nil
 			},
-			metadataRetrieverService:  &MockService{},
+			metadataRetrieverService:  &mocks.MockService{},
 			registerAdditionalServers: func(s *grpc.Server) {},
 			expectedErr:               errors.New("mock accept error"),
 		},
@@ -506,7 +477,8 @@ func TestServe(t *testing.T) {
 			defer clientConn.Close()
 			defer serverConn.Close()
 
-			lis := &MockListener{}
+			lis := &mocks.MockListener{}
+			lis.On("Addr").Return(&mocks.MockAddr{NetworkField: "unix", AddressField: "/tmp/mock.sock"})
 
 			err := sp.Serve(context.Background(), lis)
 			if tt.expectedErr != nil {

@@ -1,12 +1,39 @@
+/*
+ *
+ * Copyright © 2025 Dell Inc. or its subsidiaries. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package main
 
 import (
 	"context"
+	"errors"
+	"flag"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"testing"
+	"time"
+
+	"github.com/dell/csi-metadata-retriever/retriever/mocks"
+	"github.com/dell/gocsi"
+	csictx "github.com/dell/gocsi/context"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestIsExitSignal(t *testing.T) {
@@ -42,105 +69,61 @@ func TestIsExitSignal(t *testing.T) {
 }
 
 func TestTrapSignals(t *testing.T) {
-	// Test case: SIGTERM
-	onExitCalled := false
-	onExit := func() {
-		onExitCalled = true
+	exitCalled := false
+	abortCalled := false
+	exitCode := 0
+
+	onExit := func() { exitCalled = true }
+
+	// Mock exit function
+	exit = func(code int) {
+		exitCode = code
 	}
-	onAbort := func() {}
-	trapSignals(onExit, onAbort)
-	sigc := make(chan os.Signal, 1)
-	signal.Notify(sigc, syscall.SIGTERM)
-	sigc <- syscall.SIGTERM
-	signal.Stop(sigc)
-	close(sigc)
-	if onExitCalled {
-		t.Error("Expected onExit to be called")
+	defer func() { exit = os.Exit }() // Restore original exit function after test
+
+	tests := []struct {
+		signal       os.Signal
+		exit         bool
+		abort        bool
+		expectedCode int
+	}{
+		{syscall.SIGTERM, true, false, 0},
+		{syscall.SIGHUP, true, false, 0},
+		{syscall.SIGINT, true, false, 0},
+		{syscall.SIGQUIT, true, false, 0},
 	}
 
-	// Test case: SIGHUP
-	onExitCalled = false
-	onAbortCalled := false
-	trapSignals(onExit, onAbort)
-	sigc = make(chan os.Signal, 1)
-	signal.Notify(sigc, syscall.SIGHUP)
-	sigc <- syscall.SIGHUP
-	signal.Stop(sigc)
-	close(sigc)
-	if onExitCalled {
-		t.Error("Expected onExit to be called")
-	}
-	if onAbortCalled {
-		t.Error("Expected onAbort to not be called")
-	}
+	for _, tt := range tests {
+		t.Run(tt.signal.String(), func(t *testing.T) {
+			exitCalled = false
+			abortCalled = false
+			exitCode = 0
 
-	// Test case: SIGINT
-	onExitCalled = false
-	onAbortCalled = false
-	trapSignals(onExit, onAbort)
-	sigc = make(chan os.Signal, 1)
-	signal.Notify(sigc, syscall.SIGINT)
-	sigc <- syscall.SIGINT
-	signal.Stop(sigc)
-	close(sigc)
-	if onExitCalled {
-		t.Error("Expected onExit to be called")
-	}
-	if onAbortCalled {
-		t.Error("Expected onAbort to not be called")
-	}
+			sigc := make(chan os.Signal, 1)
+			signal.Notify(sigc, tt.signal)
+			go trapSignals(onExit)
 
-	// Test case: SIGQUIT
-	onExitCalled = false
-	onAbortCalled = false
-	trapSignals(onExit, onAbort)
-	sigc = make(chan os.Signal, 1)
-	signal.Notify(sigc, syscall.SIGQUIT)
-	sigc <- syscall.SIGQUIT
-	signal.Stop(sigc)
-	close(sigc)
-	if onExitCalled {
-		t.Error("Expected onExit to be called")
-	}
-	if onAbortCalled {
-		t.Error("Expected onAbort to not be called")
-	}
+			// Send the signal
+			syscall.Kill(syscall.Getpid(), tt.signal.(syscall.Signal))
 
-	// Test case: SIGABRT
-	onExitCalled = false
-	onAbortCalled = false
-	trapSignals(onExit, onAbort)
-	sigc = make(chan os.Signal, 1)
-	signal.Notify(sigc, syscall.SIGABRT)
-	sigc <- syscall.SIGABRT
-	signal.Stop(sigc)
-	close(sigc)
-	if onExitCalled {
-		t.Error("Expected onExit to not be called")
-	}
-	if onAbortCalled {
-		t.Error("Expected onAbort to be called")
+			// Give some time for the signal to be processed
+			time.Sleep(100 * time.Millisecond)
+
+			if exitCalled != tt.exit {
+				t.Errorf("expected exitCalled to be %v, got %v", tt.exit, exitCalled)
+			}
+			if abortCalled != tt.abort {
+				t.Errorf("expected abortCalled to be %v, got %v", tt.abort, abortCalled)
+			}
+			if exitCode != tt.expectedCode {
+				t.Errorf("expected exitCode to be %v, got %v", tt.expectedCode, exitCode)
+			}
+		})
 	}
 }
 
-type MockPluginProvider struct {
-}
-
-func (m *MockPluginProvider) Serve(ctx context.Context, l net.Listener) error {
-	return nil
-}
-
-func (m *MockPluginProvider) GracefulStop(ctx context.Context) {
-}
-
-func (m *MockPluginProvider) Stop(ctx context.Context) {
-}
-
-func TestRun(t *testing.T) {
-	var appName, appDescription, appUsage string
-	ctx := context.Background()
+func setEnvs(t *testing.T) {
 	temp := t.TempDir()
-
 	os.Setenv("CSI_RETRIEVER_ENDPOINT", temp+"/metadata")
 	os.Setenv("X_CSI_ENDPOINT_PERMS", "0777")
 	os.Setenv("X_CSI_ENDPOINT_USER", "root")
@@ -155,8 +138,121 @@ func TestRun(t *testing.T) {
 	os.Setenv("X_CSI_SPEC_REQ_VALIDATION", "true")
 	os.Setenv("X_CSI_SPEC_REP_VALIDATION", "true")
 	os.Setenv("X_CSI_SPEC_DISABLE_LEN_CHECK", "true")
+}
 
-	Run(ctx, appName, appDescription, appUsage, &MockPluginProvider{})
+// Mock implementation of csictx.Setenv
+var originalSetenv = csictx.Setenv
+var mockSetenv = func(ctx context.Context, key, value string) error {
+	if key == gocsi.EnvVarReqLogging {
+		return errors.New("mock error")
+	}
+	return originalSetenv(ctx, key, value)
+}
+
+func TestRun(t *testing.T) {
+	var appName, appDescription, appUsage string
+	ctx := context.Background()
+	setEnvs(t)
+
+	// Mock the PluginProvider
+	mockProvider := new(mocks.MockPluginProvider)
+	mockProvider.On("Serve", mock.Anything, mock.Anything).Return(nil)
+	mockProvider.On("GracefulStop", mock.Anything).Return()
+	mockProvider.On("Stop", mock.Anything).Return()
+
+	// Override the getCSIEndpointListener variable
+	getCSIEndpointListener = func() (net.Listener, error) {
+		return &mocks.MockListener{}, nil
+	}
+
+	// Run the function
+	Run(ctx, appName, appDescription, appUsage, mockProvider)
+
+	// Verify the Serve method was called
+	mockProvider.AssertCalled(t, "Serve", mock.Anything, mock.Anything)
+
+	// Test case: help flag
+	t.Run("help flag", func(t *testing.T) {
+		os.Args = []string{"cmd", "-?"}
+		Run(ctx, appName, appDescription, appUsage, mockProvider)
+		// No panic or error expected
+	})
+
+	// Test case: no endpoint set
+	t.Run("no endpoint set", func(t *testing.T) {
+		os.Unsetenv("CSI_RETRIEVER_ENDPOINT")
+		exit = func(code int) {
+			fmt.Println(code)
+		}
+		Run(ctx, appName, appDescription, appUsage, mockProvider)
+		// No panic or error expected
+	})
+
+	// Test case: help flag set to true
+	t.Run("help flag true", func(t *testing.T) {
+		os.Args = []string{"cmd"}
+		exit = func(code int) {
+			fmt.Println(code)
+		}
+		fs := flag.NewFlagSet("csp", flag.ExitOnError)
+		var help bool
+		fs.BoolVar(&help, "?", true, "")
+		fs.Parse(os.Args)
+		Run(ctx, appName, appDescription, appUsage, mockProvider)
+	})
+
+	// Test case: Simulate error setting EnvVarReqLogging
+	t.Run("error setting EnvVarReqLogging", func(t *testing.T) {
+		// Override the setenv function to simulate an error
+		originalSetenv := setenv
+		setenv = func(ctx context.Context, key, value string) error {
+			if key == gocsi.EnvVarReqLogging {
+				return errors.New("mock error")
+			}
+			return originalSetenv(ctx, key, value)
+		}
+		defer func() {
+			setenv = originalSetenv
+		}()
+
+		Run(ctx, appName, appDescription, appUsage, mockProvider)
+	})
+
+	// Test case: Simulate error setting EnvVarLogLevel
+	t.Run("error setting EnvVarLogLevel", func(t *testing.T) {
+
+		// Override the setenv function to simulate an error
+		originalSetenv := setenv
+		setenv = func(ctx context.Context, key, value string) error {
+			if key == gocsi.EnvVarLogLevel {
+				return errors.New("mock error")
+			}
+			return originalSetenv(ctx, key, value)
+		}
+		defer func() {
+			setenv = originalSetenv
+		}()
+
+		Run(ctx, appName, appDescription, appUsage, mockProvider)
+	})
+
+	// Test case: Simulate error setting EnvVarRepLogging
+	t.Run("error setting EnvVarRepLogging", func(t *testing.T) {
+
+		// Override the setenv function to simulate an error
+		originalSetenv := setenv
+		setenv = func(ctx context.Context, key, value string) error {
+			if key == gocsi.EnvVarRepLogging {
+				return errors.New("mock error")
+			}
+			return originalSetenv(ctx, key, value)
+		}
+		defer func() {
+			setenv = originalSetenv
+		}()
+
+		Run(ctx, appName, appDescription, appUsage, mockProvider)
+	})
 }
 
 func TestPrintUsage(t *testing.T) {
@@ -165,6 +261,58 @@ func TestPrintUsage(t *testing.T) {
 }
 
 func TestRmSockFile(t *testing.T) {
-	var l net.Listener
-	rmSockFile(l)
+	// Mock logrus entry
+	log := logrus.New()
+	log.SetOutput(os.Stdout)
+	log.SetLevel(logrus.InfoLevel)
+
+	// Test case: valid listener
+	t.Run("valid listener", func(t *testing.T) {
+		rmSockFileOnce = sync.Once{}
+		listener := &mocks.MockListener{}
+		listener.On("Addr").Return(&mocks.MockAddr{NetworkField: "unix", AddressField: "/tmp/mock.sock"})
+
+		rmSockFile(listener)
+
+		// Check if the socket file was removed
+		if _, err := os.Stat(listener.Addr().String()); !os.IsNotExist(err) {
+			t.Errorf("expected socket file to be removed, but it still exists")
+		}
+	})
+
+	// Test case: nil listener
+	t.Run("nil listener", func(t *testing.T) {
+		rmSockFileOnce = sync.Once{}
+		rmSockFile(nil)
+	})
+
+	// Test case: nil listener address
+	t.Run("nil listener address", func(t *testing.T) {
+		rmSockFileOnce = sync.Once{}
+		listener := &mocks.MockListener{}
+		listener.On("Addr").Return(nil)
+		rmSockFile(listener)
+	})
+
+	// Test case: error removing socket file
+	t.Run("error removing socket file", func(t *testing.T) {
+		rmSockFileOnce = sync.Once{}
+
+		listener := &mocks.MockListener{}
+		listener.On("Addr").Return(&mocks.MockAddr{NetworkField: "unix", AddressField: "/tmp/mock.sock/."})
+
+		rmSockFile(listener)
+	})
+}
+
+func TestRunMain(t *testing.T) {
+	setEnvs(t)
+
+	// Mock the PluginProvider
+	mockProvider := new(mocks.MockPluginProvider)
+	mockProvider.On("Serve", mock.Anything, mock.Anything).Return(nil)
+	mockProvider.On("GracefulStop", mock.Anything).Return()
+	mockProvider.On("Stop", mock.Anything).Return()
+
+	runMain(mockProvider)
 }

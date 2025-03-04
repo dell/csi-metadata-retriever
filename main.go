@@ -39,10 +39,12 @@ import (
 
 const netUnix = "unix"
 
-var exit = os.Exit
-var parseTemplate = func(usage string) (*template.Template, error) {
-	return template.New("t").Parse(usage)
-}
+var (
+	exit          = os.Exit
+	parseTemplate = func(usage string) (*template.Template, error) {
+		return template.New("t").Parse(usage)
+	}
+)
 
 var executeTemplate = func(t *template.Template, wr io.Writer, data interface{}) error {
 	return t.Execute(wr, data)
@@ -85,36 +87,40 @@ var printUsage = func(appName, appDescription, appUsage, binPath string) {
 	return
 }
 
-var rmSockFileOnce sync.Once
-var rmSockFile = func(l net.Listener) {
-	rmSockFileOnce.Do(func() {
-		if l == nil {
-			log.Info("listener is nil")
-			return
-		}
-		addr := l.Addr()
-		if addr == nil {
-			log.Info("listener address is nil")
-			return
-		}
-		log.Infof("listener address: %v", l.Addr().String())
-		/* #nosec G104 */
-		if l.Addr().Network() == netUnix {
-			sockAddress := l.Addr()
-			sockFile := sockAddress.String()
-			log.Infof("removing socket file: %s", sockFile)
-			err := os.RemoveAll(sockFile)
-			if err != nil {
-				log.Warnf("failed to remove sock file: %s", err)
+var (
+	rmSockFileOnce sync.Once
+	rmSockFile     = func(l net.Listener) {
+		rmSockFileOnce.Do(func() {
+			if l == nil {
+				log.Info("listener is nil")
+				return
 			}
-			log.WithField("path", sockFile).Info("removed sock file")
-		}
-	})
-}
+			addr := l.Addr()
+			if addr == nil {
+				log.Info("listener address is nil")
+				return
+			}
+			log.Infof("listener address: %v", l.Addr().String())
+			/* #nosec G104 */
+			if l.Addr().Network() == netUnix {
+				sockAddress := l.Addr()
+				sockFile := sockAddress.String()
+				log.Infof("removing socket file: %s", sockFile)
+				err := os.RemoveAll(sockFile)
+				if err != nil {
+					log.Warnf("failed to remove sock file: %s", err)
+				}
+				log.WithField("path", sockFile).Info("removed sock file")
+			}
+		})
+	}
+)
 
-var getCSIEndpointListener = utils.GetCSIEndpointListener
-var setenv = csictx.Setenv
-var lookupEnv = csictx.LookupEnv
+var (
+	getCSIEndpointListener = utils.GetCSIEndpointListener
+	setenv                 = csictx.Setenv
+	lookupEnv              = csictx.LookupEnv
+)
 
 // Run launches a CSI storage plug-in.
 func Run(
@@ -208,6 +214,7 @@ func trapSignals(onExit func()) {
 				continue
 			}
 			log.Printf("received signal; shutting down: %v", s)
+
 			if onExit != nil {
 				onExit()
 			}

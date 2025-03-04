@@ -67,7 +67,6 @@ func TestIsExitSignal(t *testing.T) {
 }
 
 func TestTrapSignals(t *testing.T) {
-
 	var mu sync.Mutex
 
 	// Mock exit function
@@ -86,7 +85,9 @@ func TestTrapSignals(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.signal.String(), func(t *testing.T) {
+			mu.Lock()
 			exitCalled := false
+			mu.Unlock()
 
 			sigc := make(chan os.Signal, 1)
 			signal.Notify(sigc, tt.signal)
@@ -102,10 +103,11 @@ func TestTrapSignals(t *testing.T) {
 
 			// Give some time for the signal to be processed
 			time.Sleep(100 * time.Millisecond)
-
+			mu.Lock()
 			if exitCalled != tt.exit {
 				t.Errorf("expected exitCalled to be %v, got %v", tt.exit, exitCalled)
 			}
+			mu.Unlock()
 		})
 	}
 }
@@ -129,13 +131,15 @@ func setEnvs(t *testing.T) {
 }
 
 // Mock implementation of csictx.Setenv
-var originalSetenv = csictx.Setenv
-var mockSetenv = func(ctx context.Context, key, value string) error {
-	if key == gocsi.EnvVarReqLogging {
-		return errors.New("mock error")
+var (
+	originalSetenv = csictx.Setenv
+	mockSetenv     = func(ctx context.Context, key, value string) error {
+		if key == gocsi.EnvVarReqLogging {
+			return errors.New("mock error")
+		}
+		return originalSetenv(ctx, key, value)
 	}
-	return originalSetenv(ctx, key, value)
-}
+)
 
 func TestRun(t *testing.T) {
 	var appName, appDescription, appUsage string
@@ -192,7 +196,6 @@ func TestRun(t *testing.T) {
 
 	// Test case: Simulate error setting EnvVarLogLevel
 	t.Run("error setting EnvVarLogLevel", func(t *testing.T) {
-
 		// Override the setenv function to simulate an error
 		originalSetenv := setenv
 		setenv = func(ctx context.Context, key, value string) error {
@@ -210,7 +213,6 @@ func TestRun(t *testing.T) {
 
 	// Test case: Simulate error setting EnvVarRepLogging
 	t.Run("error setting EnvVarRepLogging", func(t *testing.T) {
-
 		// Override the setenv function to simulate an error
 		originalSetenv := setenv
 		setenv = func(ctx context.Context, key, value string) error {

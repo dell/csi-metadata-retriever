@@ -226,9 +226,11 @@ func (sp *Plugin) initEndpointPerms(
 	return nil
 }
 
-var userLookupId = user.LookupId
-var userLookupGroupId = user.LookupGroupId
-var chown = os.Chown
+var (
+	userLookupID      = user.LookupId
+	userLookupGroupID = user.LookupGroupId
+	chown             = os.Chown
+)
 
 func (sp *Plugin) initEndpointOwner(
 	ctx context.Context, lis net.Listener,
@@ -255,7 +257,7 @@ func (sp *Plugin) initEndpointOwner(
 		usrName = v
 		szUID := v
 		if m {
-			u, err := userLookupId(v)
+			u, err := userLookupID(v)
 			if err != nil {
 				return err
 			}
@@ -282,7 +284,7 @@ func (sp *Plugin) initEndpointOwner(
 		grpName = v
 		szGID := v
 		if m {
-			u, err := userLookupGroupId(v)
+			u, err := userLookupGroupID(v)
 			if err != nil {
 				return err
 			}

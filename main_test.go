@@ -70,7 +70,7 @@ func TestTrapSignals(t *testing.T) {
 	var mu sync.Mutex
 
 	// Mock exit function
-	exit = func(code int) {}
+	exit = func(_ int) {}
 
 	tests := []struct {
 		signal os.Signal
@@ -93,7 +93,7 @@ func TestTrapSignals(t *testing.T) {
 				exitCalled = true
 				mu.Unlock()
 			}
-			go trapSignals(onExit)
+			trapSignals(onExit)
 
 			// Send the signal
 			syscall.Kill(syscall.Getpid(), tt.signal.(syscall.Signal))
@@ -161,21 +161,21 @@ func TestRun(t *testing.T) {
 	mockProvider.AssertCalled(t, "Serve", mock.Anything, mock.Anything)
 
 	// Test case: help flag
-	t.Run("help flag", func(t *testing.T) {
+	t.Run("help flag", func(_ *testing.T) {
 		os.Args = []string{"cmd", "-?"}
 		Run(ctx, appName, appDescription, appUsage, mockProvider)
 		// No panic or error expected
 	})
 
 	// Test case: no endpoint set
-	t.Run("no endpoint set", func(t *testing.T) {
+	t.Run("no endpoint set", func(_ *testing.T) {
 		os.Unsetenv("CSI_RETRIEVER_ENDPOINT")
 		Run(ctx, appName, appDescription, appUsage, mockProvider)
 		// No panic or error expected
 	})
 
 	// Test case: Simulate error setting EnvVarReqLogging
-	t.Run("error setting EnvVarReqLogging", func(t *testing.T) {
+	t.Run("error setting EnvVarReqLogging", func(_ *testing.T) {
 		// Override the setenv function to simulate an error
 		originalSetenv := setenv
 		setenv = func(ctx context.Context, key, value string) error {
@@ -192,7 +192,7 @@ func TestRun(t *testing.T) {
 	})
 
 	// Test case: Simulate error setting EnvVarLogLevel
-	t.Run("error setting EnvVarLogLevel", func(t *testing.T) {
+	t.Run("error setting EnvVarLogLevel", func(_ *testing.T) {
 		// Override the setenv function to simulate an error
 		originalSetenv := setenv
 		setenv = func(ctx context.Context, key, value string) error {
@@ -209,7 +209,7 @@ func TestRun(t *testing.T) {
 	})
 
 	// Test case: Simulate error setting EnvVarRepLogging
-	t.Run("error setting EnvVarRepLogging", func(t *testing.T) {
+	t.Run("error setting EnvVarRepLogging", func(_ *testing.T) {
 		// Override the setenv function to simulate an error
 		originalSetenv := setenv
 		setenv = func(ctx context.Context, key, value string) error {
@@ -226,7 +226,7 @@ func TestRun(t *testing.T) {
 	})
 }
 
-func TestPrintUsage(t *testing.T) {
+func TestPrintUsage(_ *testing.T) {
 	var appName, appDescription, appUsage, binPath string
 	printUsage(appName, appDescription, appUsage, binPath)
 }
@@ -252,13 +252,13 @@ func TestRmSockFile(t *testing.T) {
 	})
 
 	// Test case: nil listener
-	t.Run("nil listener", func(t *testing.T) {
+	t.Run("nil listener", func(_ *testing.T) {
 		rmSockFileOnce = sync.Once{}
 		rmSockFile(nil)
 	})
 
 	// Test case: nil listener address
-	t.Run("nil listener address", func(t *testing.T) {
+	t.Run("nil listener address", func(_ *testing.T) {
 		rmSockFileOnce = sync.Once{}
 		listener := &mocks.MockListener{}
 		listener.On("Addr").Return(nil)
@@ -266,7 +266,7 @@ func TestRmSockFile(t *testing.T) {
 	})
 
 	// Test case: error removing socket file
-	t.Run("error removing socket file", func(t *testing.T) {
+	t.Run("error removing socket file", func(_ *testing.T) {
 		rmSockFileOnce = sync.Once{}
 
 		listener := &mocks.MockListener{}

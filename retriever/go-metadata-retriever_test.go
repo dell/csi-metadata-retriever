@@ -196,20 +196,20 @@ func TestPlugin_initEndpointPerms(t *testing.T) {
 }
 
 func TestPlugin_initEndpointOwner(t *testing.T) {
-	userLookupId = func(uid string) (*user.User, error) {
+	userLookupID = func(_ string) (*user.User, error) {
 		return &user.User{
 			Uid: "1001",
 		}, nil
 	}
-	userLookupGroupId = func(gid string) (*user.Group, error) {
+	userLookupGroupID = func(_ string) (*user.Group, error) {
 		return &user.Group{
 			Gid: "1001",
 		}, nil
 	}
-	chown = func(name string, uid, gid int) error { return nil }
+	chown = func(_ string, _, _ int) error { return nil }
 	defer func() {
-		userLookupId = user.LookupId
-		userLookupGroupId = user.LookupGroupId
+		userLookupID = user.LookupId
+		userLookupGroupID = user.LookupGroupId
 		chown = os.Chown
 	}()
 
@@ -311,7 +311,7 @@ func mockLookupEnv(key string) (string, bool) {
 	return "", false
 }
 
-func mockSetenv(key, value string) error {
+func mockSetenv(key, _ string) error {
 	if key == gocsi.EnvVarReqLogging || key == gocsi.EnvVarRepLogging {
 		return errors.New("mock setenv error")
 	}
@@ -386,14 +386,14 @@ func TestPlugin_initEnvVars(t *testing.T) {
 	}
 }
 
-func TestPlugin_GracefulStop(t *testing.T) {
+func TestPlugin_GracefulStop(_ *testing.T) {
 	sp := &Plugin{
 		server: grpc.NewServer(),
 	}
 	sp.GracefulStop(context.Background())
 }
 
-func TestStop(t *testing.T) {
+func TestStop(_ *testing.T) {
 	sp := &Plugin{
 		server: grpc.NewServer(),
 	}
@@ -415,7 +415,7 @@ func TestServe(t *testing.T) {
 			plugin: &Plugin{
 				EnvVars: []string{},
 			},
-			beforeServe: func(ctx context.Context, sp *Plugin, lis net.Listener) error {
+			beforeServe: func(_ context.Context, _ *Plugin, _ net.Listener) error {
 				return errors.New("before serve error")
 			},
 			metadataRetrieverService:  &mocks.MockService{},
@@ -437,11 +437,11 @@ func TestServe(t *testing.T) {
 			plugin: &Plugin{
 				EnvVars: []string{},
 			},
-			beforeServe: func(ctx context.Context, sp *Plugin, lis net.Listener) error {
+			beforeServe: func(_ context.Context, _ *Plugin, _ net.Listener) error {
 				return nil
 			},
 			metadataRetrieverService:  &mocks.MockService{},
-			registerAdditionalServers: func(s *grpc.Server) {},
+			registerAdditionalServers: func(_ *grpc.Server) {},
 			expectedErr:               errors.New("mock accept error"),
 		},
 	}

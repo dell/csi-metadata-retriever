@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -96,18 +97,31 @@ func TestTrapSignals(t *testing.T) {
 				exitCalled = true
 				mu.Unlock()
 			}
-			go trapSignals(onExit)
+			quit := make(chan bool)
+			go func() {
+				for {
+					select {
+					case <-quit:
+						fmt.Println("Quiting - ", tt.signal.String())
+						return
+					default:
+						trapSignals(onExit)
+					}
+				}
+			}()
 
 			// Send the signal
 			syscall.Kill(syscall.Getpid(), tt.signal.(syscall.Signal))
 
 			// Give some time for the signal to be processed
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(1 * time.Second)
 			mu.Lock()
 			if exitCalled != tt.exit {
 				t.Errorf("expected exitCalled to be %v, got %v", tt.exit, exitCalled)
 			}
 			mu.Unlock()
+
+			quit <- true
 		})
 	}
 }

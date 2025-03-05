@@ -40,27 +40,43 @@ import (
 const netUnix = "unix"
 
 var (
-	exit          = os.Exit
-	parseTemplate = func(usage string) (*template.Template, error) {
+	getCSIEndpointListener = utils.GetCSIEndpointListener
+	setenv                 = csictx.Setenv
+	lookupEnv              = csictx.LookupEnv
+	exit                   = os.Exit
+	parseTemplate          = func(usage string) (*template.Template, error) {
 		return template.New("t").Parse(usage)
 	}
+	executeTemplate = func(t *template.Template, wr io.Writer, data interface{}) error {
+		return t.Execute(wr, data)
+	}
+	rmSockFileOnce sync.Once
 )
 
-var executeTemplate = func(t *template.Template, wr io.Writer, data interface{}) error {
-	return t.Execute(wr, data)
-}
-
-func main() {
-	runMain(provider.New())
-}
-
-func runMain(sp retriever.PluginProvider) {
-	var ctx context.Context
-	ctx = context.Background()
-	appName := "MetadataRetriever"
-	appDescription := "A description of the SP"
-	appUsage := ""
-	Run(ctx, appName, appDescription, appUsage, sp)
+var rmSockFile = func(l net.Listener) {
+	rmSockFileOnce.Do(func() {
+		if l == nil {
+			log.Info("listener is nil")
+			return
+		}
+		addr := l.Addr()
+		if addr == nil {
+			log.Info("listener address is nil")
+			return
+		}
+		log.Infof("listener address: %v", l.Addr().String())
+		/* #nosec G104 */
+		if l.Addr().Network() == netUnix {
+			sockAddress := l.Addr()
+			sockFile := sockAddress.String()
+			log.Infof("removing socket file: %s", sockFile)
+			err := os.RemoveAll(sockFile)
+			if err != nil {
+				log.Warnf("failed to remove sock file: %s", err)
+			}
+			log.WithField("path", sockFile).Info("removed sock file")
+		}
+	})
 }
 
 var printUsage = func(appName, appDescription, appUsage, binPath string) {
@@ -81,46 +97,23 @@ var printUsage = func(appName, appDescription, appUsage, binPath string) {
 	if err != nil {
 		log.WithError(err).Fatalln("failed to parse usage template")
 	}
-	if err := executeTemplate(t, os.Stderr, app); err != nil {
+	err = executeTemplate(t, os.Stderr, app)
+	if err != nil {
 		log.WithError(err).Fatalln("failed emitting usage")
 	}
-	return
 }
 
-var (
-	rmSockFileOnce sync.Once
-	rmSockFile     = func(l net.Listener) {
-		rmSockFileOnce.Do(func() {
-			if l == nil {
-				log.Info("listener is nil")
-				return
-			}
-			addr := l.Addr()
-			if addr == nil {
-				log.Info("listener address is nil")
-				return
-			}
-			log.Infof("listener address: %v", l.Addr().String())
-			/* #nosec G104 */
-			if l.Addr().Network() == netUnix {
-				sockAddress := l.Addr()
-				sockFile := sockAddress.String()
-				log.Infof("removing socket file: %s", sockFile)
-				err := os.RemoveAll(sockFile)
-				if err != nil {
-					log.Warnf("failed to remove sock file: %s", err)
-				}
-				log.WithField("path", sockFile).Info("removed sock file")
-			}
-		})
-	}
-)
+func main() {
+	runMain(provider.New())
+}
 
-var (
-	getCSIEndpointListener = utils.GetCSIEndpointListener
-	setenv                 = csictx.Setenv
-	lookupEnv              = csictx.LookupEnv
-)
+func runMain(sp retriever.PluginProvider) {
+	ctx := context.Background()
+	appName := "MetadataRetriever"
+	appDescription := "A description of the SP"
+	appUsage := ""
+	Run(ctx, appName, appDescription, appUsage, sp)
+}
 
 // Run launches a CSI storage plug-in.
 func Run(
@@ -163,7 +156,7 @@ func Run(
 
 	// Check for a help flag.
 	fs := flag.NewFlagSet("csp", flag.ExitOnError)
-	// fs.Usage = printUsage(appName, appDescription, appUsage, os.Args[0])
+	fs.Usage = func() { printUsage(appName, appDescription, appUsage, os.Args[0]) }
 	var help bool
 	fs.BoolVar(&help, "?", false, "")
 	err := fs.Parse(os.Args)
@@ -190,7 +183,8 @@ func Run(
 		log.Info("server stopped gracefully")
 	})
 
-	if err := sp.Serve(ctx, l); err != nil {
+	err = sp.Serve(ctx, l)
+	if err != nil {
 		rmSockFile(l)
 		log.WithError(err).Fatal("grpc failed")
 	}
@@ -213,7 +207,7 @@ func trapSignals(onExit func()) {
 			if !ok {
 				continue
 			}
-			log.Printf("received signal; shutting down: %v", s)
+			log.WithField("signal", s).Info("received signal; shutting down")
 
 			if onExit != nil {
 				onExit()

@@ -43,7 +43,6 @@ import (
 var grpcClient *grpc.ClientConn
 
 func TestServer_StartGracefulStop(_ *testing.T) {
-	// var stop func()
 	os.Setenv("CSI_RETRIEVER_ENDPOINT", "/tmp/csi_retriever_test.sock")
 
 	ctx := context.Background()
@@ -54,12 +53,9 @@ func TestServer_StartGracefulStop(_ *testing.T) {
 	grpcClient, _ = startServer(ctx, sp, true)
 	fmt.Printf("back from startServer")
 	time.Sleep(5 * time.Second)
-
-	// stop()
 }
 
 func TestServer_StartStop(_ *testing.T) {
-	// var stop func()
 	os.Setenv("CSI_RETRIEVER_ENDPOINT", "/tmp/csi_retriever_test.sock")
 
 	ctx := context.Background()
@@ -70,8 +66,6 @@ func TestServer_StartStop(_ *testing.T) {
 	grpcClient, _ = startServer(ctx, sp, false)
 	fmt.Printf("back from startServer")
 	time.Sleep(5 * time.Second)
-
-	// stop()
 }
 
 func startServer(ctx context.Context, sp *Plugin, gracefulStop bool) (*grpc.ClientConn, func()) {

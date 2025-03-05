@@ -30,6 +30,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var restInClusterConfig = rest.InClusterConfig
+
 // MetadataRetrieverClient is the interface for retrieving metadata.
 type MetadataRetrieverClient interface {
 	GetPVCLabels(context.Context, *GetPVCLabelsRequest) (*GetPVCLabelsResponse, error)
@@ -63,7 +65,7 @@ func NewMetadataRetrieverClient(conn *grpc.ClientConn, timeout time.Duration) *M
 }
 
 func defaultGetClientset() (kubernetes.Interface, error) {
-	config, err := rest.InClusterConfig()
+	config, err := restInClusterConfig()
 	if err != nil {
 		return nil, err
 	}

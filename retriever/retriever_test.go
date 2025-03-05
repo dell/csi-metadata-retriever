@@ -22,7 +22,6 @@ import (
 	"strings"
 	"testing"
 
-	"bou.ke/monkey"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -58,8 +57,10 @@ func createTestClient(fakeClientset func() (kubernetes.Interface, error)) *Metad
 
 func TestDefaultGetClientset(t *testing.T) {
 	// Test the successful case
-	patch := monkey.Patch(rest.InClusterConfig, mockInClusterConfig)
-	defer patch.Unpatch()
+	restInClusterConfig = mockInClusterConfig
+	defer func() {
+		restInClusterConfig = rest.InClusterConfig
+	}()
 
 	clientset, err := defaultGetClientset()
 	if err != nil {
@@ -76,9 +77,7 @@ func TestDefaultGetClientset(t *testing.T) {
 	}
 
 	// Test the error case
-	patch.Unpatch()
-	patch = monkey.Patch(rest.InClusterConfig, mockInClusterConfigError)
-	defer patch.Unpatch()
+	restInClusterConfig = mockInClusterConfigError
 
 	clientset, err = defaultGetClientset()
 	if err == nil {

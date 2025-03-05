@@ -226,6 +226,12 @@ func (sp *Plugin) initEndpointPerms(
 	return nil
 }
 
+var (
+	userLookupID      = user.LookupId
+	userLookupGroupID = user.LookupGroupId
+	chown             = os.Chown
+)
+
 func (sp *Plugin) initEndpointOwner(
 	ctx context.Context, lis net.Listener,
 ) error {
@@ -251,7 +257,7 @@ func (sp *Plugin) initEndpointOwner(
 		usrName = v
 		szUID := v
 		if m {
-			u, err := user.LookupId(v)
+			u, err := userLookupID(v)
 			if err != nil {
 				return err
 			}
@@ -278,7 +284,7 @@ func (sp *Plugin) initEndpointOwner(
 		grpName = v
 		szGID := v
 		if m {
-			u, err := user.LookupGroupId(v)
+			u, err := userLookupGroupID(v)
 			if err != nil {
 				return err
 			}
@@ -304,7 +310,7 @@ func (sp *Plugin) initEndpointOwner(
 			"gid":  grpName,
 			"path": f,
 		}).Info("chown csi endpoint")
-		if err := os.Chown(f, uid, gid); err != nil {
+		if err := chown(f, uid, gid); err != nil {
 			return err
 		}
 	}

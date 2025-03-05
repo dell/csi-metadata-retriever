@@ -63,31 +63,30 @@ go-vendor:
 .PHONY: go-build
 go-build: clean
 	go build .
-	
+
 .PHONY: clean
 clean:
 	go clean
-	
+
 # Generates the docker container (but does not push)
 docker:
 	go generate .
-	make -f docker.mk DOCKER_FILE=docker-files/Dockerfile  build-base-image docker
+	make -f docker.mk DOCKER_FILE=docker-files/Dockerfile  docker
 
 # Same as `docker` but without cached layers and will pull latest version of base image
 docker-no-cache:
 	go generate .
 	make -f docker.mk DOCKER_FILE=docker-files/Dockerfile docker-no-cache
 
-
 # Pushes container to the repository
-push:	docker
+push: docker
 		make -f docker.mk push
 
-check:	gosec
+check: gosec
 	gofmt -w ./.
 	golint -set_exit_status ./.
 	go vet ./...
-	
+
 gosec:
 	gosec -quiet -log gosec.log -out=gosecresults.csv -fmt=csv ./...
 
@@ -98,3 +97,20 @@ test:
 
 coverage:
 	cd ./retriever; go tool cover -html=coverage.out -o coverage.html
+
+.PHONY: actions action-help
+actions: ## Run all GitHub Action checks that run on a pull request creation
+	@echo "Running all GitHub Action checks for pull request events..."
+	@act -l | grep -v ^Stage | grep pull_request | grep -v image_security_scan | awk '{print $$2}' | while read WF; do \
+		echo "Running workflow: $${WF}"; \
+		act pull_request --no-cache-server --platform ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest --job "$${WF}"; \
+	done
+
+action-help: ## Echo instructions to run one specific workflow locally
+	@echo "GitHub Workflows can be run locally with the following command:"
+	@echo "act pull_request --no-cache-server --platform ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest --job <jobid>"
+	@echo ""
+	@echo "Where '<jobid>' is a Job ID returned by the command:"
+	@echo "act -l"
+	@echo ""
+	@echo "NOTE: if act is not installed, it can be downloaded from https://github.com/nektos/act"

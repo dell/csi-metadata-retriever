@@ -63,31 +63,30 @@ go-vendor:
 .PHONY: go-build
 go-build: clean
 	go build .
-	
+
 .PHONY: clean
 clean:
 	go clean
-	
+
 # Generates the docker container (but does not push)
 docker:
 	go generate .
-	make -f docker.mk DOCKER_FILE=docker-files/Dockerfile  build-base-image docker
+	make -f docker.mk DOCKER_FILE=docker-files/Dockerfile  docker
 
 # Same as `docker` but without cached layers and will pull latest version of base image
 docker-no-cache:
 	go generate .
 	make -f docker.mk DOCKER_FILE=docker-files/Dockerfile docker-no-cache
 
-
 # Pushes container to the repository
-push:	docker
+push: docker
 		make -f docker.mk push
 
-check:	gosec
+check: gosec
 	gofmt -w ./.
 	golint -set_exit_status ./.
 	go vet ./...
-	
+
 gosec:
 	gosec -quiet -log gosec.log -out=gosecresults.csv -fmt=csv ./...
 

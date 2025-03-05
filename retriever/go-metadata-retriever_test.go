@@ -196,41 +196,22 @@ func TestPlugin_initEndpointPerms(t *testing.T) {
 }
 
 func TestPlugin_initEndpointOwner(t *testing.T) {
-	mockOS := new(mocks.MockOS)
-	mockUser := new(mocks.MockUser)
-
-	// Mock os.Chown function
-	mockOS.On("Chown", "/tmp/mock.sock", 1000, 1000).Return(nil)
-
-	// Mock user.LookupId function
-	mockUser.On("LookupId", "1000").Return(&user.User{
-		Uid:      "1000",
-		Gid:      "1000",
-		Username: "testuser",
-	}, nil).Once()
-	mockUser.On("LookupId", mock.Anything).Return(nil, fmt.Errorf("unknown userid")).Maybe()
-
-	// Mock user.Lookup function
-	mockUser.On("Lookup", "testuser").Return(&user.User{
-		Uid:      "1000",
-		Gid:      "1000",
-		Username: "testuser",
-	}, nil).Once()
-	mockUser.On("Lookup", mock.Anything).Return(nil, fmt.Errorf("unknown user")).Maybe()
-
-	// Mock user.LookupGroupId function
-	mockUser.On("LookupGroupId", "1000").Return(&user.Group{
-		Gid:  "1000",
-		Name: "testgroup",
-	}, nil).Once()
-	mockUser.On("LookupGroupId", mock.Anything).Return(nil, fmt.Errorf("unknown groupid")).Maybe()
-
-	// Mock user.LookupGroup function
-	mockUser.On("LookupGroup", "testgroup").Return(&user.Group{
-		Gid:  "1000",
-		Name: "testgroup",
-	}, nil).Once()
-	mockUser.On("LookupGroup", mock.Anything).Return(nil, fmt.Errorf("unknown group")).Maybe()
+	userLookupId = func(uid string) (*user.User, error) {
+		return &user.User{
+			Uid: "1001",
+		}, nil
+	}
+	userLookupGroupId = func(gid string) (*user.Group, error) {
+		return &user.Group{
+			Gid: "1001",
+		}, nil
+	}
+	chown = func(name string, uid, gid int) error { return nil }
+	defer func() {
+		userLookupId = user.LookupId
+		userLookupGroupId = user.LookupGroupId
+		chown = os.Chown
+	}()
 
 	// Create the mock file
 	mockFile := "/tmp/mock.sock"
@@ -251,8 +232,8 @@ func TestPlugin_initEndpointOwner(t *testing.T) {
 			plugin: &Plugin{
 				EnvVars: []string{},
 			},
-			uid:         "1000",
-			gid:         "1000",
+			uid:         "1001",
+			gid:         "1001",
 			expectedErr: false,
 		},
 		{

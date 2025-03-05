@@ -21,7 +21,6 @@ import (
 	"errors"
 	"net"
 	"os"
-	"os/user"
 
 	"github.com/dell/csi-metadata-retriever/service"
 	"github.com/stretchr/testify/mock"
@@ -98,28 +97,4 @@ func (m *MockOS) Chown(name string, uid, gid int) error {
 func (m *MockOS) Chmod(address string, mode os.FileMode) error {
 	args := m.Called(address, mode)
 	return args.Error(0)
-}
-
-type MockUser struct {
-	mock.Mock
-}
-
-func (m *MockUser) LookupId(id string) (*user.User, error) {
-	args := m.Called(id)
-	return args.Get(0).(*user.User), args.Error(1)
-}
-
-func (m *MockUser) Lookup(id string) (*user.User, error) {
-	args := m.Called(id)
-	return args.Get(0).(*user.User), args.Error(1)
-}
-
-func (m *MockUser) LookupGroupId(id string) (*user.Group, error) {
-	args := m.Called(id)
-	return args.Get(0).(*user.Group), args.Error(1)
-}
-
-func (m *MockUser) LookupGroup(name string) (*user.Group, error) {
-	args := m.Called(name)
-	return args.Get(0).(*user.Group), args.Error(1)
 }

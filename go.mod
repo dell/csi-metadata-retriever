@@ -3,7 +3,7 @@ module github.com/dell/csi-metadata-retriever
 go 1.24
 
 require (
-	github.com/dell/gocsi v1.13.0
+	github.com/dell/gocsi v1.13.1-0.20250226203119-f6c4e42fab09
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/net v0.36.0

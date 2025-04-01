@@ -20,8 +20,8 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/dell/gocsi v1.13.1-0.20250226203119-f6c4e42fab09 h1:wYjkmD0nNVNgmmHxttgVZaQehFE76JIDuIuwbjrFuM8=
-github.com/dell/gocsi v1.13.1-0.20250226203119-f6c4e42fab09/go.mod h1:iZODT8g3FlH2R+umcn5J7uWsxERXOnokIj8UMGmUFE0=
+github.com/dell/gocsi v1.13.1-0.20250327070427-854e59aaa95d h1:HX6KqeZC/9rTm2mcY1JA/AL/Eo3pphqA7v92oNLB3QM=
+github.com/dell/gocsi v1.13.1-0.20250327070427-854e59aaa95d/go.mod h1:iZODT8g3FlH2R+umcn5J7uWsxERXOnokIj8UMGmUFE0=
 github.com/dustin/go-humanize v1.0.0 h1:VSnTsYCnlFHaM2/igO1h6X3HA71jcobQuxemgkq4zYo=
 github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
 github.com/emicklei/go-restful/v3 v3.12.1 h1:PJMDIM/ak7btuL8Ex0iYET9hxM3CI2sjZtzpL63nKAU=

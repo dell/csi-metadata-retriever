@@ -2,7 +2,7 @@ module github.com/dell/csi-metadata-retriever
 
 go 1.24.0
 
-toolchain go1.24.1
+toolchain go1.24.2
 
 require (
 	github.com/dell/gocsi v1.13.1-0.20250423132914-5966abd5770a

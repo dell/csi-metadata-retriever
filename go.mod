@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.24.2
 
 require (
-	github.com/dell/gocsi v1.13.1-0.20250423132914-5966abd5770a
+	github.com/dell/gocsi v1.13.1-0.20250429191623-c3d2d8e59834
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/net v0.39.0

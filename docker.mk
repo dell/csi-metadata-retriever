@@ -15,21 +15,25 @@
 -include vars.mk
 include overrides.mk
 
+ifeq ($(IMAGETAG),)
+IMAGETAG="v$(MAJOR).$(MINOR).$(PATCH)$(RELNOTE)"
+endif
+
 docker: download-csm-common
 	$(eval include csm-common.mk)
-	echo "Building: $(REGISTRY)/$(IMAGENAME):v$(MAJOR).$(MINOR).$(PATCH) RELNOTE $(RELNOTE)"
+	echo "Building: $(REGISTRY)/$(IMAGENAME):$(IMAGETAG)"
 	echo "$(DOCKER_FILE)"
-	$(BUILDER) build --pull -f $(DOCKER_FILE) -t "$(REGISTRY)/$(IMAGENAME):v$(MAJOR).$(MINOR).$(PATCH)$(RELNOTE)" --build-arg BASEIMAGE=$(CSM_BASEIMAGE) --build-arg GOIMAGE=$(DEFAULT_GOIMAGE) .
+	$(BUILDER) build --pull -f $(DOCKER_FILE) -t "$(REGISTRY)/$(IMAGENAME):$(IMAGETAG)" --build-arg BASEIMAGE=$(CSM_BASEIMAGE) --build-arg GOIMAGE=$(DEFAULT_GOIMAGE) .
 
 docker-no-cache: download-csm-common
 	$(eval include csm-common.mk)
-	echo "Building: $(REGISTRY)/$(IMAGENAME):$(MAJOR).$(MINOR).$(PATCH) RELNOTE $(RELNOTE)"
+	echo "Building: $(REGISTRY)/$(IMAGENAME):$(IMAGETAG)"
 	echo "$(DOCKER_FILE) --no-cache"
-	$(BUILDER) build --pull --no-cache --pull -f $(DOCKER_FILE) -t "$(REGISTRY)/$(IMAGENAME):v$(MAJOR).$(MINOR).$(PATCH)$(RELNOTE)" --build-arg BASEIMAGE=$(CSM_BASEIMAGE) --build-arg GOIMAGE=$(DEFAULT_GOIMAGE) .
+	$(BUILDER) build --pull --no-cache --pull -f $(DOCKER_FILE) -t "$(REGISTRY)/$(IMAGENAME):$(IMAGETAG)" --build-arg BASEIMAGE=$(CSM_BASEIMAGE) --build-arg GOIMAGE=$(DEFAULT_GOIMAGE) .
 
 push:
-	echo "Pushing MAJOR $(MAJOR) MINOR $(MINOR) PATCH $(PATCH) RELNOTE $(RELNOTE)"
-	$(BUILDER) push "$(REGISTRY)/$(IMAGENAME):v$(MAJOR).$(MINOR).$(PATCH)$(RELNOTE)"
+	echo "Pushing $(REGISTRY)/$(IMAGENAME):$(IMAGETAG)"
+	$(BUILDER) push "$(REGISTRY)/$(IMAGENAME):$(IMAGETAG)"
 
 download-csm-common:
 	curl -O -L https://raw.githubusercontent.com/dell/csm/main/config/csm-common.mk

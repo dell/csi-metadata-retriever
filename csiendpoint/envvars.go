@@ -14,7 +14,7 @@
  *
  */
 
-package utils
+package csiendpoint
 
 const (
 	// EnvVarEndpoint is the name of the environment variable used to

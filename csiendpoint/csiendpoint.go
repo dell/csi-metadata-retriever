@@ -14,7 +14,7 @@
  *
  */
 
-package utils
+package csiendpoint
 
 import (
 	"errors"
@@ -22,7 +22,7 @@ import (
 	"os"
 	"regexp"
 
-	gocsiutils "github.com/dell/gocsi/utils"
+	gocsiutils "github.com/dell/gocsi/utils/csi"
 )
 
 var emptyRX = regexp.MustCompile(`^\s*$`)

@@ -14,7 +14,7 @@
  *
  */
 
-package utils
+package csiendpoint
 
 import (
 	"os"
@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test function outside the utils package that makes use of the mock.
+// Test function outside the csiendpoint package that makes use of the mock.
 // TestGetCSIEndpoint tests the GetCSIEndpoint function.
 func TestGetCSIEndpoint(t *testing.T) {
 	tests := []struct {

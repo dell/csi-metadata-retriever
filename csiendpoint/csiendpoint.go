@@ -1,6 +1,6 @@
 /*
  *
- * Copyright © 2022 Dell Inc. or its subsidiaries. All Rights Reserved.
+ * Copyright © 2022-2025 Dell Inc. or its subsidiaries. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  *
  */
 
-package utils
+package csiendpoint
 
 import (
 	"errors"
@@ -22,7 +22,7 @@ import (
 	"os"
 	"regexp"
 
-	gocsiutils "github.com/dell/gocsi/utils"
+	gocsiutils "github.com/dell/gocsi/utils/csi"
 )
 
 var emptyRX = regexp.MustCompile(`^\s*$`)

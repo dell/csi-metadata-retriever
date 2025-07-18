@@ -28,9 +28,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dell/csi-metadata-retriever/csiendpoint"
 	"github.com/dell/csi-metadata-retriever/retriever/mocks"
 	"github.com/dell/csi-metadata-retriever/service"
-	"github.com/dell/csi-metadata-retriever/utils"
 	"github.com/dell/gocsi"
 	csictx "github.com/dell/gocsi/context"
 	"github.com/stretchr/testify/assert"
@@ -69,7 +69,7 @@ func TestServer_StartStop(_ *testing.T) {
 }
 
 func startServer(ctx context.Context, sp *Plugin, gracefulStop bool) (*grpc.ClientConn, func()) {
-	lis, err := utils.GetCSIEndpointListener()
+	lis, err := csiendpoint.GetCSIEndpointListener()
 	if err != nil {
 		fmt.Printf("couldn't open listener: %s\n", err.Error())
 		return nil, nil
@@ -82,7 +82,7 @@ func startServer(ctx context.Context, sp *Plugin, gracefulStop bool) (*grpc.Clie
 			fmt.Printf("http: Server closed. Error: %v", err)
 		}
 	}()
-	network, addr, err := utils.GetCSIEndpoint()
+	network, addr, err := csiendpoint.GetCSIEndpoint()
 	if err != nil {
 		return nil, nil
 	}

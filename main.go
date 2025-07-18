@@ -30,9 +30,9 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/dell/csi-metadata-retriever/csiendpoint"
 	"github.com/dell/csi-metadata-retriever/provider"
 	"github.com/dell/csi-metadata-retriever/retriever"
-	"github.com/dell/csi-metadata-retriever/utils"
 	"github.com/dell/gocsi"
 	csictx "github.com/dell/gocsi/context"
 )
@@ -40,7 +40,7 @@ import (
 const netUnix = "unix"
 
 var (
-	getCSIEndpointListener = utils.GetCSIEndpointListener
+	getCSIEndpointListener = csiendpoint.GetCSIEndpointListener
 	setenv                 = csictx.Setenv
 	lookupEnv              = csictx.LookupEnv
 	exit                   = os.Exit
@@ -166,7 +166,7 @@ func Run(
 	}
 
 	// If no endpoint is set then print the usage.
-	if os.Getenv(utils.EnvVarEndpoint) == "" {
+	if os.Getenv(csiendpoint.EnvVarEndpoint) == "" {
 		log.Warnf("no endpoint set")
 		printUsage(appName, appDescription, appUsage, os.Args[0])
 		exit(1)

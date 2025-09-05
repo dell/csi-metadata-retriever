@@ -35,8 +35,8 @@ LABEL vendor="Dell Technologies" \
       name="csi-metadata-retriever" \
       summary="CSI Metadata Retriever sidecar" \
       description="CSI Metadata Retriever sidecar for metadata retrieval via the Kubernetes API" \
-      release="1.13.0" \
-      version="1.10.0" \
+      release="1.15.0" \
+      version="1.12.0" \
       license="Apache-2.0"
 COPY licenses /licenses
 ENTRYPOINT ["/csi-metadata-retriever"]

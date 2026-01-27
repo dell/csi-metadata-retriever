@@ -1,71 +1,31 @@
+# Copyright © 2022-2026 Dell Inc. or its subsidiaries. All Rights Reserved.
 #
-#
-# Copyright © 2022 - 2024 Dell Inc. or its subsidiaries. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#      http://www.apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-#
+# Dell Technologies, Dell and other trademarks are trademarks of Dell Inc.
+# or its subsidiaries. Other trademarks may be trademarks of their respective 
+# owners.
 
-NAME:=csi-metadata-retriever
 
 .PHONY: all
 
 all: help
 
 # include an overrides file, which sets up default values and allows user overrides
-include overrides.mk
+include images.mk
 
 # Help target, prints usefule information
 help:
 	@echo
 	@echo "The following targets are commonly used:"
 	@echo
-	@echo "go-build         - Builds the code locally"
+	@echo "build            - Builds the code locally, you may need to run make vendor"
 	@echo "check            - Runs the suite of code checking tools: lint, format, etc"
 	@echo "clean            - Cleans the local build"
-	@echo "docker           - Builds the code within a golang container and then creates the driver image"
-	@echo "push             - Pushes the built container to a target registry"
 	@echo "test             - Runs the unit tests"
 	@echo
 	@make -s overrides-help
 
-ifneq (on,$(GO111MODULE))
-export GO111MODULE := on
-endif
-
-.PHONY: go-vendor
-go-vendor:
-	go mod vendor
-
-.PHONY: go-build
-go-build: clean
-	go build .
-
-.PHONY: clean
-clean:
-	go clean
-
-# Generates the docker container (but does not push)
-docker:
-	go generate .
-	make -f docker.mk DOCKER_FILE=docker-files/Dockerfile  docker
-
-# Same as `docker` but without cached layers and will pull latest version of base image
-docker-no-cache:
-	go generate .
-	make -f docker.mk DOCKER_FILE=docker-files/Dockerfile docker-no-cache
-
-# Pushes container to the repository
-push: docker
-		make -f docker.mk push
+build:
+	GOOS=linux CGO_ENABLED=0 go build -mod=vendor .
 
 check: gosec
 	gofmt -w ./.
@@ -83,19 +43,8 @@ test:
 coverage:
 	cd ./retriever; go tool cover -html=coverage.out -o coverage.html
 
-.PHONY: actions action-help
-actions: ## Run all GitHub Action checks that run on a pull request creation
-	@echo "Running all GitHub Action checks for pull request events..."
-	@act -l | grep -v ^Stage | grep pull_request | grep -v image_security_scan | awk '{print $$2}' | while read WF; do \
-		echo "Running workflow: $${WF}"; \
-		act pull_request --no-cache-server --platform ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest --job "$${WF}"; \
-	done
+clean:
+	rm -rf vendor
+	rm -f csm-common.mk
+	go clean
 
-action-help: ## Echo instructions to run one specific workflow locally
-	@echo "GitHub Workflows can be run locally with the following command:"
-	@echo "act pull_request --no-cache-server --platform ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest --job <jobid>"
-	@echo ""
-	@echo "Where '<jobid>' is a Job ID returned by the command:"
-	@echo "act -l"
-	@echo ""
-	@echo "NOTE: if act is not installed, it can be downloaded from https://github.com/nektos/act"

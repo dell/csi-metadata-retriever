@@ -1,0 +1,7 @@
+site_name: 'csi-metadata-retriever'
+site_description: 'csi-metadata-retriever Documentation.'
+docs_dir: docs
+plugins:
+  - techdocs-core
+theme:
+  name: material

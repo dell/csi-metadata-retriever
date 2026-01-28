@@ -2,8 +2,10 @@
 .idea/
 *.out
 *.html
+csm-common.mk
 bin/
 csi-vxflexos/
 goscaleio/
 dell-csi-extensions/
+vendor/
 workspace.code-workspace

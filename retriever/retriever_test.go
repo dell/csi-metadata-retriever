@@ -26,8 +26,25 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 )
+
+type pvcNilClientset struct {
+	*fake.Clientset
+}
+
+func (c *pvcNilClientset) CoreV1() corev1client.CoreV1Interface {
+	return &pvcNilCoreV1{CoreV1Interface: c.Clientset.CoreV1()}
+}
+
+type pvcNilCoreV1 struct {
+	corev1client.CoreV1Interface
+}
+
+func (c *pvcNilCoreV1) PersistentVolumeClaims(_ string) corev1client.PersistentVolumeClaimInterface {
+	return nil
+}
 
 // Mock function to return a simulated successful clientset
 func FakeGetClientset() (kubernetes.Interface, error) {
@@ -160,5 +177,25 @@ func TestNewMetadataRetrieverClient(t *testing.T) {
 	client := NewMetadataRetrieverClient(nil, 0)
 	if client == nil {
 		t.Error("Expected client to be created")
+	}
+}
+
+func TestGetPVCLabels_PVCClientIsNil_CoversBranch(t *testing.T) {
+	wrapped := &pvcNilClientset{Clientset: fake.NewSimpleClientset()}
+	client := NewMetadataRetrieverClient(nil, 0)
+	client.getClientset = func() (kubernetes.Interface, error) {
+		return wrapped, nil
+	}
+	req := &GetPVCLabelsRequest{
+		Name:      "mypvc",
+		NameSpace: "default",
+	}
+	resp, err := client.GetPVCLabels(context.Background(), req)
+
+	if resp != nil {
+		t.Fatalf("expected resp to be nil when pvcClient is nil; got: %#v", resp)
+	}
+	if err != nil {
+		t.Fatalf("expected err to be nil with current implementation; got: %v", err)
 	}
 }

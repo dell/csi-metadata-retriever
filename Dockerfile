@@ -13,7 +13,7 @@
 # some arguments that must be supplied
 ARG GOIMAGE
 ARG BASEIMAGE
-ARG VERSION="1.13.0"
+ARG VERSION="1.14.0"
 
 # Stage to build the driver
 FROM $GOIMAGE as builder
@@ -32,7 +32,7 @@ LABEL vendor="Dell Technologies" \
       name="csi-metadata-retriever" \
       summary="CSI Metadata Retriever sidecar" \
       description="CSI Metadata Retriever sidecar for metadata retrieval via the Kubernetes API" \
-      release="1.16.0" \
+      release="1.17.0" \
       version=$VERSION \
       license="Apache-2.0"
 COPY licenses /licenses

@@ -22,7 +22,3 @@ Dell csi-metadata-retriever controller retrieves metadata from a Kubernetes clus
 ## Support
 
 For any issues, questions or feedback, please follow our [support process](https://github.com/dell/csm/blob/main/docs/SUPPORT.md)
-
-## Documentation
-
-For more detailed information on the driver, please refer to [Container Storage Modules documentation](https://dell.github.io/csm-docs/).

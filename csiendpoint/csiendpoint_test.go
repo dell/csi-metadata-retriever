@@ -18,6 +18,7 @@ package csiendpoint
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -109,10 +110,37 @@ func TestGetCSIEndpointListener(t *testing.T) {
 				assert.NotNil(t, listener)
 				assert.Equal(t, tt.expectedNetwork, listener.Addr().Network())
 				assert.Equal(t, tt.expectedAddr, listener.Addr().String())
+				listener.Close()
 			} else {
 				assert.EqualError(t, err, tt.expectedError)
 				assert.Nil(t, listener)
 			}
 		})
 	}
+}
+
+// TestGetCSIEndpointListener_StaleSocket verifies that a stale Unix socket
+// file left over from a previous instance (e.g. after a non-graceful
+// termination such as a node reboot) is removed before listening, preventing
+// "bind: address already in use" errors.
+func TestGetCSIEndpointListener_StaleSocket(t *testing.T) {
+	sockPath := filepath.Join(t.TempDir(), "csi_retriever.sock")
+
+	// Create a stale regular file at the socket path to simulate a
+	// leftover from a previous instance.
+	f, err := os.Create(sockPath)
+	require.NoError(t, err)
+	f.Close()
+	_, err = os.Stat(sockPath)
+	require.NoError(t, err, "stale file should exist before test")
+
+	t.Setenv("CSI_RETRIEVER_ENDPOINT", sockPath)
+
+	listener, err := GetCSIEndpointListener()
+	require.NoError(t, err, "should remove stale socket and listen successfully")
+	require.NotNil(t, listener)
+	defer listener.Close()
+
+	assert.Equal(t, "unix", listener.Addr().Network())
+	assert.Equal(t, sockPath, listener.Addr().String())
 }

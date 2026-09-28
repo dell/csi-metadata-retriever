@@ -28,10 +28,10 @@ import (
 	"strings"
 	"sync"
 
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
 	"github.com/dell/csi-metadata-retriever/service"
+	"github.com/dell/csmlog"
 	"github.com/dell/gocsi"
 	csictx "github.com/dell/gocsi/context"
 )
@@ -157,8 +157,14 @@ func (sp *Plugin) Serve(ctx context.Context, lis net.Listener) error {
 
 		endpoint := fmt.Sprintf(
 			"%s://%s",
-			lis.Addr().Network(), lis.Addr().String())
-		log.WithField("endpoint", endpoint).Info("serving")
+			lis.Addr().Network(), lis.Addr().String(),
+		)
+		csmlog.WithFields(csmlog.Fields{
+			csmlog.FieldComponent: "plugin",
+			csmlog.FieldOperation: "Serve",
+			csmlog.FieldProtocol:  lis.Addr().Network(),
+			"endpoint":            endpoint,
+		}).Info("serving")
 
 		// Start the gRPC server.
 		err = sp.server.Serve(lis)
@@ -177,7 +183,11 @@ func (sp *Plugin) Stop(_ context.Context) {
 		if sp.server != nil {
 			sp.server.Stop()
 		}
-		log.Info("stopped")
+		csmlog.WithFields(csmlog.Fields{
+			csmlog.FieldComponent: "plugin",
+			csmlog.FieldOperation: "Stop",
+			csmlog.FieldProtocol:  "grpc",
+		}).Info("stopped")
 	})
 }
 
@@ -189,7 +199,11 @@ func (sp *Plugin) GracefulStop(_ context.Context) {
 		if sp.server != nil {
 			sp.server.GracefulStop()
 		}
-		log.Info("gracefully stopped")
+		csmlog.WithFields(csmlog.Fields{
+			csmlog.FieldComponent: "plugin",
+			csmlog.FieldOperation: "GracefulStop",
+			csmlog.FieldProtocol:  "grpc",
+		}).Info("gracefully stopped")
 	})
 }
 
@@ -214,9 +228,12 @@ func (sp *Plugin) initEndpointPerms(
 	p := lis.Addr().String()
 	m := os.FileMode(u)
 
-	log.WithFields(map[string]interface{}{
-		"path": p,
-		"mode": m,
+	csmlog.WithFields(csmlog.Fields{
+		csmlog.FieldComponent: "plugin",
+		csmlog.FieldOperation: "initEndpointPerms",
+		csmlog.FieldProtocol:  lis.Addr().Network(),
+		"path":                p,
+		"mode":                m,
 	}).Info("chmod csi endpoint")
 
 	if err := os.Chmod(p, m); err != nil {
@@ -305,10 +322,13 @@ func (sp *Plugin) initEndpointOwner(
 
 	if uid != puid || gid != pgid {
 		f := lis.Addr().String()
-		log.WithFields(map[string]interface{}{
-			"uid":  usrName,
-			"gid":  grpName,
-			"path": f,
+		csmlog.WithFields(csmlog.Fields{
+			csmlog.FieldComponent: "plugin",
+			csmlog.FieldOperation: "initEndpointOwner",
+			csmlog.FieldProtocol:  lis.Addr().Network(),
+			"uid":                 usrName,
+			"gid":                 grpName,
+			"path":                f,
 		}).Info("chown csi endpoint")
 		if err := chown(f, uid, gid); err != nil {
 			return err
@@ -357,21 +377,6 @@ func (sp *Plugin) initEnvVars(ctx context.Context) {
 			val = pair[1]
 		}
 		sp.envVars[key] = val
-	}
-
-	// Check for the debug value.
-	if v, ok := csictx.LookupEnv(ctx, gocsi.EnvVarDebug); ok {
-		/* #nosec G104 */
-		if ok, _ := strconv.ParseBool(v); ok {
-			err := csictx.Setenv(ctx, gocsi.EnvVarReqLogging, "true")
-			if err != nil {
-				log.Warnf("failed to set EnvVarReqLogging")
-			}
-			err = csictx.Setenv(ctx, gocsi.EnvVarRepLogging, "true")
-			if err != nil {
-				log.Warnf("failed to set EnvVarRepLogging")
-			}
-		}
 	}
 
 	return

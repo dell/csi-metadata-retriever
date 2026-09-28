@@ -23,26 +23,20 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"strconv"
 	"sync"
 	"syscall"
 	"text/template"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/dell/csi-metadata-retriever/csiendpoint"
 	"github.com/dell/csi-metadata-retriever/provider"
 	"github.com/dell/csi-metadata-retriever/retriever"
-	"github.com/dell/gocsi"
-	csictx "github.com/dell/gocsi/context"
+	"github.com/dell/csmlog"
 )
 
 const netUnix = "unix"
 
 var (
 	getCSIEndpointListener = csiendpoint.GetCSIEndpointListener
-	setenv                 = csictx.Setenv
-	lookupEnv              = csictx.LookupEnv
 	exit                   = os.Exit
 	parseTemplate          = func(usage string) (*template.Template, error) {
 		return template.New("t").Parse(usage)
@@ -56,25 +50,41 @@ var (
 var rmSockFile = func(l net.Listener) {
 	rmSockFileOnce.Do(func() {
 		if l == nil {
-			log.Info("listener is nil")
+			csmlog.Info("rmSockFile: listener is nil")
 			return
 		}
 		addr := l.Addr()
 		if addr == nil {
-			log.Info("listener address is nil")
+			csmlog.Info("rmSockFile: listener address is nil")
 			return
 		}
-		log.Infof("listener address: %v", l.Addr().String())
+		csmlog.Infof("listener address: %v", l.Addr().String())
 		/* #nosec G104 */
 		if l.Addr().Network() == netUnix {
 			sockAddress := l.Addr()
 			sockFile := sockAddress.String()
-			log.Infof("removing socket file: %s", sockFile)
+			csmlog.WithFields(csmlog.Fields{
+				csmlog.FieldComponent: "retriever",
+				csmlog.FieldOperation: "rmSockFile",
+				csmlog.FieldProtocol:  l.Addr().Network(),
+				"path":                sockFile,
+			}).Info("removing socket file")
 			err := os.RemoveAll(sockFile)
 			if err != nil {
-				log.Warnf("failed to remove sock file: %s", err)
+				csmlog.WithFields(csmlog.Fields{
+					csmlog.FieldComponent: "retriever",
+					csmlog.FieldOperation: "rmSockFile",
+					csmlog.FieldProtocol:  l.Addr().Network(),
+					csmlog.FieldError:     err.Error(),
+					"path":                sockFile,
+				}).Warn("failed to remove sock file")
 			}
-			log.WithField("path", sockFile).Info("removed sock file")
+			csmlog.WithFields(csmlog.Fields{
+				csmlog.FieldComponent: "retriever",
+				csmlog.FieldOperation: "rmSockFile",
+				csmlog.FieldProtocol:  l.Addr().Network(),
+				"path":                sockFile,
+			}).Info("removed sock file")
 		}
 	})
 }
@@ -95,11 +105,19 @@ var printUsage = func(appName, appDescription, appUsage, binPath string) {
 
 	t, err := parseTemplate(usage)
 	if err != nil {
-		log.WithError(err).Fatalln("failed to parse usage template")
+		csmlog.WithFields(csmlog.Fields{
+			csmlog.FieldComponent: "retriever",
+			csmlog.FieldOperation: "printUsage",
+			csmlog.FieldError:     err.Error(),
+		}).Fatal("failed to parse usage template")
 	}
 	err = executeTemplate(t, os.Stderr, app)
 	if err != nil {
-		log.WithError(err).Fatalln("failed emitting usage")
+		csmlog.WithFields(csmlog.Fields{
+			csmlog.FieldComponent: "retriever",
+			csmlog.FieldOperation: "printUsage",
+			csmlog.FieldError:     err.Error(),
+		}).Fatal("failed emitting usage")
 	}
 }
 
@@ -121,39 +139,6 @@ func Run(
 	appName, appDescription, appUsage string,
 	sp retriever.PluginProvider,
 ) {
-	// Check for the debug value.
-	if v, ok := lookupEnv(ctx, gocsi.EnvVarDebug); ok {
-		/* #nosec G104 */
-		if ok, _ := strconv.ParseBool(v); ok {
-			log.Infof("setting EnvVarLogLevel")
-			err := setenv(ctx, gocsi.EnvVarLogLevel, "debug")
-			if err != nil {
-				log.Warnf("failed to set EnvVarLogLevel")
-			}
-			log.Infof("setting EnvVarReqLogging")
-			err = setenv(ctx, gocsi.EnvVarReqLogging, "true")
-			if err != nil {
-				log.Warnf("failed to set EnvVarReqLogging")
-			}
-			log.Infof("setting EnvVarRepLogging")
-			err = setenv(ctx, gocsi.EnvVarRepLogging, "true")
-			if err != nil {
-				log.Warnf("failed to set EnvVarRepLogging")
-			}
-		}
-	}
-
-	// Adjust the log level.
-	lvl := log.InfoLevel
-	if v, ok := lookupEnv(ctx, gocsi.EnvVarLogLevel); ok {
-		var err error
-		if lvl, err = log.ParseLevel(v); err != nil {
-			lvl = log.InfoLevel
-		}
-	}
-	log.Info("setting log level to: ", lvl)
-	log.SetLevel(lvl)
-
 	// Check for a help flag.
 	fs := flag.NewFlagSet("csp", flag.ExitOnError)
 	fs.Usage = func() { printUsage(appName, appDescription, appUsage, os.Args[0]) }
@@ -167,26 +152,42 @@ func Run(
 
 	// If no endpoint is set then print the usage.
 	if os.Getenv(csiendpoint.EnvVarEndpoint) == "" {
-		log.Warnf("no endpoint set")
+		csmlog.Warnf("no endpoint set")
 		printUsage(appName, appDescription, appUsage, os.Args[0])
 		exit(1)
 	}
 
 	l, err := getCSIEndpointListener()
 	if err != nil {
-		log.WithError(err).Fatalln("failed to listen")
+		csmlog.WithFields(csmlog.Fields{
+			csmlog.FieldComponent: "retriever",
+			csmlog.FieldOperation: "startup",
+			csmlog.FieldError:     err.Error(),
+		}).Error("failed to listen")
+		exit(1)
 	}
 
 	trapSignals(func() {
 		sp.GracefulStop(ctx)
 		rmSockFile(l)
-		log.Info("server stopped gracefully")
+		csmlog.WithFields(csmlog.Fields{
+			csmlog.FieldComponent: "retriever",
+			csmlog.FieldOperation: "shutdown",
+			csmlog.FieldProtocol:  l.Addr().Network(),
+			"address":             l.Addr().String(),
+		}).Info("server stopped gracefully")
 	})
 
 	err = sp.Serve(ctx, l)
 	if err != nil {
 		rmSockFile(l)
-		log.WithError(err).Fatal("grpc failed")
+		csmlog.WithFields(csmlog.Fields{
+			csmlog.FieldComponent: "retriever",
+			csmlog.FieldOperation: "startup",
+			csmlog.FieldProtocol:  "grpc",
+			csmlog.FieldError:     err.Error(),
+		}).Error("grpc failed")
+		exit(1)
 	}
 }
 
@@ -199,20 +200,25 @@ func trapSignals(onExit func()) {
 		syscall.SIGQUIT,
 	}
 	signal.Notify(sigc, sigs...)
+	exitFunc := exit
 	go func() {
 		for s := range sigc {
-			log.Printf("received signal: %v", s)
+			csmlog.Infof("received signal: %s", s.String())
 			ok, graceful := isExitSignal(s)
-			log.Printf("isExitSignal: ok=%v, graceful=%v", ok, graceful)
+			csmlog.Debugf("isExitSignal: is_exit=%v, graceful=%v", ok, graceful)
 			if !ok {
 				continue
 			}
-			log.WithField("signal", s).Info("received signal; shutting down")
+			csmlog.WithFields(csmlog.Fields{
+				csmlog.FieldComponent: "retriever",
+				csmlog.FieldOperation: "shutdown",
+				"signal":              s.String(),
+			}).Info("received exit signal; shutting down")
 
 			if onExit != nil {
 				onExit()
 			}
-			exit(0)
+			exitFunc(0)
 		}
 	}()
 }

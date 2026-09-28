@@ -22,8 +22,8 @@ import (
 
 	"github.com/dell/csi-metadata-retriever/retriever"
 	"github.com/dell/csi-metadata-retriever/service"
+	"github.com/dell/csmlog"
 	"github.com/dell/gocsi"
-	log "github.com/sirupsen/logrus"
 )
 
 // New returns a new CSI Storage Plug-in Provider.
@@ -42,7 +42,12 @@ func New() retriever.PluginProvider {
 			_ *retriever.Plugin,
 			_ net.Listener,
 		) error {
-			log.WithField("service", "MetadataRetriever").Debug("BeforeServe")
+			csmlog.WithFields(csmlog.Fields{
+				csmlog.FieldComponent: "provider",
+				csmlog.FieldOperation: "BeforeServe",
+				csmlog.FieldProtocol:  "grpc",
+				"service":             "MetadataRetriever",
+			}).Debug("BeforeServe")
 			return nil
 		},
 

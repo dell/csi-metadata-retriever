@@ -299,17 +299,7 @@ func mockLookupEnv(key string) (string, bool) {
 	if key == "KEY1" {
 		return "context_value", true
 	}
-	if key == gocsi.EnvVarDebug {
-		return strconv.FormatBool(true), true
-	}
 	return "", false
-}
-
-func mockSetenv(key, _ string) error {
-	if key == gocsi.EnvVarReqLogging || key == gocsi.EnvVarRepLogging {
-		return errors.New("mock setenv error")
-	}
-	return nil
 }
 
 func TestPlugin_initEnvVars(t *testing.T) {
@@ -344,18 +334,6 @@ func TestPlugin_initEnvVars(t *testing.T) {
 				"KEY1": "context_value",
 			},
 		},
-		{
-			name: "Setenv error handling",
-			envVars: []string{
-				"X_CSI_REQ_LOGGING=true",
-				"X_CSI_REP_LOGGING=true",
-			},
-			expectedEnvVars: map[string]string{
-				gocsi.EnvVarReqLogging: "true",
-				gocsi.EnvVarRepLogging: "true",
-			},
-			expectDebugLogging: true,
-		},
 	}
 
 	for _, tt := range tests {
@@ -367,7 +345,6 @@ func TestPlugin_initEnvVars(t *testing.T) {
 
 			ctx := context.Background()
 			ctx = csictx.WithLookupEnv(ctx, mockLookupEnv)
-			ctx = csictx.WithSetenv(ctx, mockSetenv)
 
 			plugin.initEnvVars(ctx)
 

@@ -39,10 +39,18 @@ func GetCSIEndpoint() (network, addr string, err error) {
 
 // GetCSIEndpointListener returns the net.Listener for the endpoint
 // specified by the environment variable CSI_ENDPOINT.
+// For Unix sockets, any stale socket file from a previous instance is
+// removed before listening to prevent "address already in use" errors
+// after non-graceful termination (e.g. node reboot where SIGKILL
+// bypasses the signal handler).
 func GetCSIEndpointListener() (net.Listener, error) {
 	proto, addr, err := GetCSIEndpoint()
 	if err != nil {
 		return nil, err
+	}
+	if proto == "unix" {
+		/* #nosec G104 */ // best-effort cleanup; net.Listen will fail if path is still unusable
+		os.Remove(addr)
 	}
 	return net.Listen(proto, addr)
 }

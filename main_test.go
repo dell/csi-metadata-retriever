@@ -28,9 +28,6 @@ import (
 	"time"
 
 	"github.com/dell/csi-metadata-retriever/retriever/mocks"
-	"github.com/dell/gocsi"
-	csictx "github.com/dell/gocsi/context"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -69,8 +66,12 @@ func TestIsExitSignal(t *testing.T) {
 func TestTrapSignals(t *testing.T) {
 	var mu sync.Mutex
 
-	// Mock exit function
+	// Mock exit function - save and restore original
+	originalExit := exit
 	exit = func(_ int) {}
+	defer func() {
+		exit = originalExit
+	}()
 
 	tests := []struct {
 		signal os.Signal
@@ -115,11 +116,8 @@ func setEnvs(t *testing.T) {
 	os.Setenv("X_CSI_ENDPOINT_PERMS", "0777")
 	os.Setenv("X_CSI_ENDPOINT_USER", "root")
 	os.Setenv("X_CSI_ENDPOINT_GROUP", "root")
-	os.Setenv("X_CSI_DEBUG", "true")
 	os.Setenv("X_CSI_LOG_LEVEL", "debug")
 	os.Setenv("X_CSI_PLUGIN_INFO", "my-plugin")
-	os.Setenv("X_CSI_REQ_LOGGING", "true")
-	os.Setenv("X_CSI_REP_LOGGING", "true")
 	os.Setenv("X_CSI_REQ_ID_INJECTION", "true")
 	os.Setenv("X_CSI_SPEC_VALIDATION", "true")
 	os.Setenv("X_CSI_SPEC_REQ_VALIDATION", "true")
@@ -127,21 +125,17 @@ func setEnvs(t *testing.T) {
 	os.Setenv("X_CSI_SPEC_DISABLE_LEN_CHECK", "true")
 }
 
-// Mock implementation of csictx.Setenv
-var (
-	originalSetenv = csictx.Setenv
-	mockSetenv     = func(ctx context.Context, key, value string) error {
-		if key == gocsi.EnvVarReqLogging {
-			return errors.New("mock error")
-		}
-		return originalSetenv(ctx, key, value)
-	}
-)
-
 func TestRun(t *testing.T) {
 	var appName, appDescription, appUsage string
 	ctx := context.Background()
 	setEnvs(t)
+
+	// Mock exit function for all subtests
+	originalExit := exit
+	exit = func(_ int) {}
+	defer func() {
+		exit = originalExit
+	}()
 
 	// Mock the PluginProvider
 	mockProvider := new(mocks.MockPluginProvider)
@@ -174,69 +168,105 @@ func TestRun(t *testing.T) {
 		// No panic or error expected
 	})
 
-	// Test case: Simulate error setting EnvVarReqLogging
-	t.Run("error setting EnvVarReqLogging", func(_ *testing.T) {
-		// Override the setenv function to simulate an error
-		originalSetenv := setenv
-		setenv = func(ctx context.Context, key, value string) error {
-			if key == gocsi.EnvVarReqLogging {
-				return errors.New("mock error")
-			}
-			return originalSetenv(ctx, key, value)
-		}
-		defer func() {
-			setenv = originalSetenv
-		}()
-
+	// Test case: multiple runs with different endpoints
+	t.Run("multiple runs", func(_ *testing.T) {
+		setEnvs(t)
+		Run(ctx, appName, appDescription, appUsage, mockProvider)
 		Run(ctx, appName, appDescription, appUsage, mockProvider)
 	})
 
-	// Test case: Simulate error setting EnvVarLogLevel
-	t.Run("error setting EnvVarLogLevel", func(_ *testing.T) {
-		// Override the setenv function to simulate an error
-		originalSetenv := setenv
-		setenv = func(ctx context.Context, key, value string) error {
-			if key == gocsi.EnvVarLogLevel {
-				return errors.New("mock error")
-			}
-			return originalSetenv(ctx, key, value)
+	// Test case: listener error
+	t.Run("listener error", func(t *testing.T) {
+		setEnvs(t)
+		var mu sync.Mutex
+		originalExit := exit
+		exitCalled := false
+		exit = func(_ int) {
+			mu.Lock()
+			exitCalled = true
+			mu.Unlock()
 		}
 		defer func() {
-			setenv = originalSetenv
+			exit = originalExit
 		}()
-
-		Run(ctx, appName, appDescription, appUsage, mockProvider)
-	})
-
-	// Test case: Simulate error setting EnvVarRepLogging
-	t.Run("error setting EnvVarRepLogging", func(_ *testing.T) {
-		// Override the setenv function to simulate an error
-		originalSetenv := setenv
-		setenv = func(ctx context.Context, key, value string) error {
-			if key == gocsi.EnvVarRepLogging {
-				return errors.New("mock error")
-			}
-			return originalSetenv(ctx, key, value)
+		originalListener := getCSIEndpointListener
+		getCSIEndpointListener = func() (net.Listener, error) {
+			return nil, errors.New("listener error")
 		}
 		defer func() {
-			setenv = originalSetenv
+			getCSIEndpointListener = originalListener
 		}()
-
 		Run(ctx, appName, appDescription, appUsage, mockProvider)
+		mu.Lock()
+		if !exitCalled {
+			t.Errorf("expected exit to be called on listener error")
+		}
+		mu.Unlock()
 	})
+
+	// Test case: serve error
+	t.Run("serve error", func(t *testing.T) {
+		setEnvs(t)
+		var mu sync.Mutex
+		originalExit := exit
+		exitCalled := false
+		exit = func(_ int) {
+			mu.Lock()
+			exitCalled = true
+			mu.Unlock()
+		}
+		defer func() {
+			exit = originalExit
+		}()
+		mockProvider2 := new(mocks.MockPluginProvider)
+		mockProvider2.On("Serve", mock.Anything, mock.Anything).Return(errors.New("serve error"))
+		mockProvider2.On("GracefulStop", mock.Anything).Return()
+		mockProvider2.On("Stop", mock.Anything).Return()
+		mockListener := &mocks.MockListener{}
+		mockListener.On("Addr").Return(&mocks.MockAddr{NetworkField: "unix", AddressField: "/tmp/test.sock"})
+		rmSockFileOnce = sync.Once{}
+		getCSIEndpointListener = func() (net.Listener, error) {
+			return mockListener, nil
+		}
+		Run(ctx, appName, appDescription, appUsage, mockProvider2)
+		mu.Lock()
+		if !exitCalled {
+			t.Errorf("expected exit to be called on serve error")
+		}
+		mu.Unlock()
+	})
+}
+
+func TestTrapSignalsCallback(t *testing.T) {
+	callbackExecuted := false
+	onExit := func() {
+		callbackExecuted = true
+	}
+
+	// Start trap signals
+	trapSignals(onExit)
+
+	// Give goroutine time to start
+	time.Sleep(100 * time.Millisecond)
+
+	// Callback should not be called without a signal
+	if callbackExecuted {
+		t.Errorf("callback should not be executed without signal")
+	}
 }
 
 func TestPrintUsage(_ *testing.T) {
-	var appName, appDescription, appUsage, binPath string
+	appName := "TestApp"
+	appDescription := "Test Description"
+	appUsage := "test usage"
+	binPath := "test-bin"
 	printUsage(appName, appDescription, appUsage, binPath)
+
+	// Test with empty values
+	printUsage("", "", "", "")
 }
 
 func TestRmSockFile(t *testing.T) {
-	// Mock logrus entry
-	log := logrus.New()
-	log.SetOutput(os.Stdout)
-	log.SetLevel(logrus.InfoLevel)
-
 	// Test case: valid listener
 	t.Run("valid listener", func(t *testing.T) {
 		rmSockFileOnce = sync.Once{}

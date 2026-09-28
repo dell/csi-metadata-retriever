@@ -29,7 +29,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/dell/csmlog"
 )
 
 var restInClusterConfig = rest.InClusterConfig
@@ -99,27 +99,50 @@ func (s *MetadataRetrieverClientType) GetPVCLabels(
 	req *GetPVCLabelsRequest) (
 	*GetPVCLabelsResponse, error,
 ) {
-	log.Infof("Get PVC labels for %s in namespace %s", req.Name, req.NameSpace)
+	csmlog.WithContext(ctx).WithFields(csmlog.Fields{
+		csmlog.FieldComponent: "retriever",
+		csmlog.FieldOperation: "GetPVCLabels",
+		csmlog.FieldProtocol:  "grpc",
+		"pvc_name":            req.Name,
+		"namespace":           req.NameSpace,
+	}).Info("getting PVC labels")
 	if req.Name == "" {
 		return nil, errors.New(
-			"PVC Name cannot be empty")
+			"PVC Name cannot be empty",
+		)
 	}
 
 	clientset, err := s.getClientset()
 	if err != nil {
-		log.Error("Error creating clientset: ", err)
+		csmlog.WithContext(ctx).WithFields(csmlog.Fields{
+			csmlog.FieldComponent: "retriever",
+			csmlog.FieldOperation: "GetPVCLabels",
+			csmlog.FieldProtocol:  "grpc",
+			csmlog.FieldError:     err.Error(),
+		}).Error("error creating clientset")
 		return nil, err
 	}
 
 	pvcClient := clientset.CoreV1().PersistentVolumeClaims(req.NameSpace)
 	if pvcClient == nil {
-		log.Error("Error getting PVC client: ", err)
+		csmlog.WithContext(ctx).WithFields(csmlog.Fields{
+			csmlog.FieldComponent: "retriever",
+			csmlog.FieldOperation: "GetPVCLabels",
+			csmlog.FieldProtocol:  "grpc",
+			"namespace":           req.NameSpace,
+		}).Error("error getting PVC client")
 		return nil, err
 	}
 
 	pvc, err := pvcClient.Get(ctx, req.Name, metav1.GetOptions{})
 	if err != nil {
-		log.Error("Error retrieving PVC info: ", err)
+		csmlog.WithContext(ctx).WithFields(csmlog.Fields{
+			csmlog.FieldComponent: "retriever",
+			csmlog.FieldOperation: "GetPVCLabels",
+			csmlog.FieldProtocol:  "grpc",
+			csmlog.FieldError:     err.Error(),
+			"pvc_name":            req.Name,
+		}).Error("error retrieving PVC info")
 		return nil, err
 	}
 
@@ -146,8 +169,15 @@ func (s *MetadataRetrieverClientType) GetPVCLabelsByPVName(
 	pvcName := req.PVCName
 	pvcNamespace := req.PVCNamespace
 
-	log.Debugf("Getting PVC labels by VolumeHandle=%s, PVName=%s, PVCName=%s, PVCNamespace=%s",
-		volumeHandle, pvName, pvcName, pvcNamespace)
+	csmlog.WithContext(ctx).WithFields(csmlog.Fields{
+		csmlog.FieldComponent: "retriever",
+		csmlog.FieldOperation: "GetPVCLabelsByPVName",
+		csmlog.FieldProtocol:  "grpc",
+		"volume_handle":       volumeHandle,
+		"pv_name":             pvName,
+		"pvc_name":            pvcName,
+		"pvc_namespace":       pvcNamespace,
+	}).Debug("getting PVC labels by PV name")
 
 	if volumeHandle == "" {
 		return nil, errors.New("VolumeHandle is empty")
@@ -165,7 +195,14 @@ func (s *MetadataRetrieverClientType) GetPVCLabelsByPVName(
 		pvc, err = s.lookupPVC(ctx, clientset, pvcName, pvcNamespace, pvName)
 		if err != nil {
 			// Assuming the PVC with this name has been removed or has been re-bound to another PV
-			log.Debugf("Could not retrieve the PVC %s/%s: %v", pvcNamespace, pvcName, err)
+			csmlog.WithContext(ctx).WithFields(csmlog.Fields{
+				csmlog.FieldComponent: "retriever",
+				csmlog.FieldOperation: "GetPVCLabelsByPVName",
+				csmlog.FieldProtocol:  "grpc",
+				"pvc_namespace":       pvcNamespace,
+				"pvc_name":            pvcName,
+				csmlog.FieldError:     fmt.Sprintf("%v", err),
+			}).Debug("could not retrieve the PVC")
 		}
 	}
 
@@ -190,7 +227,13 @@ func (s *MetadataRetrieverClientType) GetPVCLabelsByPVName(
 		}
 	}
 
-	log.Debugf("Retrieving labels for PVC %s/%s", pvcNamespace, pvcName)
+	csmlog.WithContext(ctx).WithFields(csmlog.Fields{
+		csmlog.FieldComponent: "retriever",
+		csmlog.FieldOperation: "GetPVCLabelsByPVName",
+		csmlog.FieldProtocol:  "grpc",
+		"pvc_namespace":       pvcNamespace,
+		"pvc_name":            pvcName,
+	}).Debug("retrieving labels for PVC")
 
 	return &GetPVCLabelsByPVNameResponse{
 		Parameters:   pvc.Labels,
